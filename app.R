@@ -122,8 +122,8 @@ ui <- dashboardPage(
                                      br(),
                                      column(width=4,
                                             buttonGroup( inputId = "date_type4",
-                                                         choices = c("Value", "Per day", "Per week"), 
-                                                         selected = "Value", multiple= F)
+                                                         choices = c("Cumulative", "Per day", "Per week"), 
+                                                         selected = "Cumulative", multiple= F)
                                      ),
                                      column(width=6,
                                             buttonGroup( inputId = "value_type4",
