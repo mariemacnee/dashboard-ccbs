@@ -263,11 +263,6 @@ ui <- dashboardPage(
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
                                      ),
-                                     column(width=6,
-                                            buttonGroup( inputId = "value_type1",
-                                                         choices = c("Value", "Log"), 
-                                                         selected = "Value", multiple= F)
-                                     ),
                                      column(width=12,
                                             plotlyOutput("sign_up_bar", height = 300)
                                      )),
@@ -303,11 +298,6 @@ ui <- dashboardPage(
                                             buttonGroup( inputId = "date_type2",
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
-                                     ),
-                                     column(width=6,
-                                            buttonGroup( inputId = "value_type2",
-                                                         choices = c("Value", "Log"), 
-                                                         selected = "Value", multiple= F)
                                      ),
                                     column(width=12,
                                     plotlyOutput("contact_bar", height = 300)
@@ -353,25 +343,6 @@ ui <- dashboardPage(
                                      ))
                             
                         )),
-                    # box(title = "E-Mail sent", solidHeader = F,  status = "primary",width=6,
-                    #     tabsetPanel(
-                    #         tabPanel("History",
-                    #                  br(),
-                    #                  column(width=4,
-                    #                         buttonGroup( inputId = "date_type3",
-                    #                                      choices = c("Cumulative", "Per day", "Per week"), 
-                    #                                      selected = "Cumulative", multiple= F)
-                    #                  ),
-                    #                  column(width=6,
-                    #                         buttonGroup( inputId = "value_type3",
-                    #                                      choices = c("Value", "Log"), 
-                    #                                      selected = "Value", multiple= F)
-                    #                  ),
-                    #                  column(width=12,
-                    #                         plotOutput("plot3", height = 250)
-                    #                  )),
-                    #         tabPanel("E-Mail stats")
-                    #     )),
                     box(title = "Appointment", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
                             tabPanel("Appointment call",
@@ -380,11 +351,6 @@ ui <- dashboardPage(
                                             buttonGroup( inputId = "date_type3",
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
-                                     ),
-                                     column(width=6,
-                                            buttonGroup( inputId = "value_type3",
-                                                         choices = c("Value", "Log"), 
-                                                         selected = "Value", multiple= F)
                                      ),
                                      column(width=12,
                                             plotlyOutput("appointment_bar", height = 300)
@@ -419,11 +385,6 @@ ui <- dashboardPage(
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
                                      ),
-                                     column(width=6,
-                                            buttonGroup( inputId = "value_type4",
-                                                        choices = c("Value", "Log"), 
-                                                        selected = "Value", multiple= F)
-                                     ),
                                      column(width=12,
                                            plotlyOutput("visit_bar", height = 300)
                                      ))
@@ -436,11 +397,6 @@ ui <- dashboardPage(
                                             buttonGroup( inputId = "date_type6",
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
-                                     ),
-                                     column(width=6,
-                                            buttonGroup( inputId = "value_type6",
-                                                         choices = c("Value", "Log"), 
-                                                         selected = "Value", multiple= F)
                                      ),
                                      column(width=12,
                                             plotOutput("plot5", height = 250)
