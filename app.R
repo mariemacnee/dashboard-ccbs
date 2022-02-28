@@ -246,14 +246,48 @@ ui <- dashboardPage(
         style = "background-color:#2C3E50;",
         tabItem(tabName = "dashboard",
                 fluidRow(
-                    column(12, offset=2,
+                    column(12, offset=1,
                     valueBoxOutput("box_signup", width=2),
                     valueBoxOutput("box_contact", width=2),
-                    valueBoxOutput("box_app_scheduled", width=2),
+                    valueBoxOutput("box_app_calls", width=2),
+                    valueBoxOutput("box_visit_scheduled", width=2),
                     valueBoxOutput("box_onboard", width = 2)
                     )
                 ),
                 fluidRow(
+                  box(title = "Onboarded", solidHeader = T,  status = "success", width=12,
+                      tabsetPanel(
+                        tabPanel("First visit",
+                                 br(),
+                                 column(width=6, 
+                                       column(width=4,
+                                              buttonGroup( inputId = "date_type5",
+                                                           choices = c("Cumulative", "Per day", "Per week"), 
+                                                           selected = "Cumulative", multiple= F)
+                                       ),
+                                       column(width=12,
+                                              br(),
+                                              plotlyOutput("onboarded_bar", height = 400)
+                                       )),
+                                 column(width = 6,
+                                        column(width = 6,
+                                              plotlyOutput("pie_gender5", height = 300)),
+                                        column(width = 6,
+                                               plotlyOutput("pie_race5", height = 300)),
+                                        column(width=12,
+                                               plotlyOutput("age_histo5", height = 200)))),
+                        #tabPanel("Second visit"),
+                        tabPanel("More demographics",
+                                 br(),
+                                 column(width=3,
+                                        plotlyOutput("pie_employee5", height = 200)),
+                                 column(width=3,
+                                        plotlyOutput("pie_ccfpatient5", height = 200)),
+                                 column(width=3,
+                                         plotlyOutput("bar_city5", height = 300)),
+                                 column(width=3,
+                                         plotlyOutput("bar_county5", height = 300)))
+                      )),
                     box(title="Sign up", solidHeader = F, status = "primary",width=6,
                         tabsetPanel(
                             tabPanel("History",
@@ -265,30 +299,8 @@ ui <- dashboardPage(
                                      ),
                                      column(width=12,
                                             plotlyOutput("sign_up_bar", height = 300)
-                                     )),
-                            tabPanel("Demographics",
-                                     br(),
-                                     column(width = 6,
-                                            plotlyOutput("pie_race1", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_gender1", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_employee1", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_ccfpatient1", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_city1", height = 400)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_county1", height = 400)
-                                     ),
-                                     column(width = 12,
-                                            plotlyOutput("age_histo1", height = 200)
                                      ))
+                          
                         )),
                     box(title = "Contact", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
@@ -318,30 +330,6 @@ ui <- dashboardPage(
                                      column(width = 6,
                                             plotlyOutput("pie_saturday_mri", height = 250)
                                      )),
-                            tabPanel("Demographics",
-                                     br(),
-                                     column(width = 6,
-                                            plotlyOutput("pie_race2", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_gender2", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_employee2", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_ccfpatient2", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_city2", height = 400)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_county2", height = 400)
-                                     ),
-                                     column(width = 12,
-                                            plotlyOutput("age_histo2", height = 200)
-                                     ))
-                            
                         )),
                     box(title = "Appointment", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
@@ -354,66 +342,65 @@ ui <- dashboardPage(
                                      ),
                                      column(width=12,
                                             plotlyOutput("appointment_bar", height = 300)
-                                     )),
-                            tabPanel("Demographics",
-                                     br(),
-                                     column(width = 6,
-                                            plotlyOutput("pie_race3", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_gender3", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_employee3", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("pie_ccfpatient3", height = 250)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_city3", height = 400)
-                                     ),
-                                     column(width = 6,
-                                            plotlyOutput("bar_county3", height = 400)
-                                     ),
-                                     column(width = 12,
-                                            plotlyOutput("age_histo3", height = 200)
-                                     )),
-                            tabPanel("Visit scheduled",
-                                     br(),
-                                     column(width=4,
-                                            buttonGroup( inputId = "date_type4",
-                                                         choices = c("Cumulative", "Per day", "Per week"), 
-                                                         selected = "Cumulative", multiple= F)
-                                     ),
-                                     column(width=12,
-                                           plotlyOutput("visit_bar", height = 300)
                                      ))
                         )),
-                    box(title = "Onboarded", solidHeader = T,  status = "success", width=12,
+                    box(title = "Scheduled visits", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
-                            tabPanel("First visit",
-                                     br(),
-                                     column(width=2,
-                                            buttonGroup( inputId = "date_type6",
-                                                         choices = c("Cumulative", "Per day", "Per week"), 
-                                                         selected = "Cumulative", multiple= F)
-                                     ),
-                                     column(width=12,
-                                            plotOutput("plot5", height = 250)
-                                     )),
-                            tabPanel("Second visit")
+                          tabPanel("Visits",
+                                   br(),
+                                   column(width=4,
+                                          buttonGroup( inputId = "date_type4",
+                                                       choices = c("Cumulative", "Per day", "Per week"), 
+                                                       selected = "Cumulative", multiple= F)
+                                   ),
+                                   column(width=12,
+                                          plotlyOutput("visit_bar", height = 300)
+                                   ))
                         )),
-                    box(title = "Demographics of onboarded participants", solidHeader = T,  status = "primary", width=12,
-                        column(width=12,
-                               br(),
-                               column(width=12,
-                               plotOutput("plot6", height = 250)
-                               )
-                        ))
+                  box(title = "Demographics of different steps", solidHeader = T,  status = "primary", width=12,
+                      column(width=12,
+                             br(),
+                             column(3,
+                                    plotlyOutput("pie_race1", height = 250),
+                                    plotlyOutput("pie_gender1", height = 250),
+                                    plotlyOutput("pie_employee1", height = 250),
+                                    plotlyOutput("pie_ccfpatient1", height = 250),
+                                    plotlyOutput("bar_city1", height = 400),
+                                    plotlyOutput("bar_county1", height = 400),
+                                    plotlyOutput("age_histo1", height = 200)
+                             ),
+                             column(3,
+                                    plotlyOutput("pie_race2", height = 250),
+                                    plotlyOutput("pie_gender2", height = 250),
+                                    plotlyOutput("pie_employee2", height = 250),
+                                    plotlyOutput("pie_ccfpatient2", height = 250),
+                                    plotlyOutput("bar_city2", height = 400),
+                                    plotlyOutput("bar_county2", height = 400),
+                                    plotlyOutput("age_histo2", height = 200)
+                             ),
+                             column(3,
+                                    plotlyOutput("pie_race3", height = 250),
+                                    plotlyOutput("pie_gender3", height = 250),
+                                    plotlyOutput("pie_employee3", height = 250),
+                                    plotlyOutput("pie_ccfpatient3", height = 250),
+                                    plotlyOutput("bar_city3", height = 400),
+                                    plotlyOutput("bar_county3", height = 400),
+                                    plotlyOutput("age_histo3", height = 200)
+                             ),
+                             column(3,
+                                    plotlyOutput("pie_race4", height = 250),
+                                    plotlyOutput("pie_gender4", height = 250),
+                                    plotlyOutput("pie_employee4", height = 250),
+                                    plotlyOutput("pie_ccfpatient4", height = 250),
+                                    plotlyOutput("bar_city4", height = 400),
+                                    plotlyOutput("bar_county4", height = 400),
+                                    plotlyOutput("age_histo4", height = 200)
+                             )
+                             )
+                      ))
                 )
         )
     )
-)
 
 server <- function(input, output) {
     
@@ -426,8 +413,8 @@ server <- function(input, output) {
       
         valueBox(
           #assuming that all individuals in this file signed up 
-          nrow(data), paste0("Sign up (today: ", data_mod.df %>% 
-                                filter(sign_up_datetime == current_day) %>% 
+          nrow(data), paste0("Sign up (yesterday: ", data_mod.df %>% 
+                                filter(sign_up_datetime == current_day - days(1)) %>% 
                                 nrow(.),")"), icon = icon("sign-in"),
             color = "aqua"
         )
@@ -440,46 +427,58 @@ server <- function(input, output) {
         nrow(.)
       
         valueBox(
-          value_input, paste0("Contacted (today: ", data_mod.df %>% 
-                                filter(initial_contact_date == current_day) %>% 
-                                nrow(.),")"), icon = icon("phone"),
+          value_input, paste0("Contacted (yesterday: ", data_mod.df %>% 
+                                filter(initial_contact_date == current_day - days(1)) %>% 
+                                nrow(.),")"), icon = icon("message-check"),
             color = "light-blue"
         )
     })
     
-    output$box_app_scheduled <- renderValueBox({
+    output$box_app_calls <- renderValueBox({
       
       value_input <- data_mod.df %>% 
-                  filter(step %in% c("first _isit","appointment_scheduled")) %>%      ###"first _isit"?
+                  filter(!is.na(appointment_call_date)) %>%
                   nrow(.)
       
         valueBox(
-          value_input, paste0("Appointment scheduled (today: ", data_mod.df %>% 
-                                filter(appointment_call_date == current_day) %>% 
+          value_input, paste0("Appointment calls (yesterday: ", data_mod.df %>% 
+                                filter(appointment_call_date == current_day - days(1)) %>% 
                                 nrow(.),")"), icon = icon("phone"),
-            color = "navy"
+            color = "blue"
         )
+    })
+    
+    output$box_visit_scheduled <- renderValueBox({
+      
+      value_input <- data_mod.df %>% 
+        #filter(step %in% c("first_visit","appointment_scheduled")) %>%
+        filter(!is.na(visit_schedule_date)) %>%
+        nrow(.)
+      
+      valueBox(
+        value_input, paste0("Scheduled visits (yesterday: ", data_mod.df %>% 
+                              filter(visit_schedule_date == current_day - days(1)) %>% 
+                              nrow(.),")"), icon = icon("phone"),
+        color = "navy"
+      )
     })
     
     output$box_onboard <- renderValueBox({
       
       #not sure if this is the right way to get this number 
       value_input <- data_mod.df %>% 
-        filter(step %in% c("first_visit")) %>% 
+        filter(whether_first_visit == 1) %>%
+        filter(!is.na(whether_first_visit)) %>%
         nrow(.)
       
         valueBox(
-          value_input, paste0("Onboarded (today: ", data_mod.df %>% 
-                                filter(visit_schedule_date == current_day) %>% 
+          value_input, paste0("Onboarded (yesterday: ", data_mod.df %>% 
+                                filter(visit_schedule_date == current_day  - days(1) & whether_first_visit == 1) %>% 
                                 nrow(.),")"),icon = icon("users"),
             color = "green"
         )
     })
-    
-    
-    
-    
-    #plot changes upon data_type selection 
+  
     
     observeEvent(input$date_type1,{
       
@@ -515,6 +514,27 @@ server <- function(input, output) {
       output$visit_bar <- renderPlotly({
         overviewplot_1("visit_schedule_date","Number of scheduled visits",input$date_type4,
                        input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+        
+      })
+    })
+    
+    observeEvent(input$date_type5,{
+      
+      output$onboarded_bar <- renderPlotly({
+
+        #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+        date_filter = input$date_filter
+        
+        if(input$date_filter[1] > current_day){
+         date_filter[1] <- current_day
+        }
+        
+        if(input$date_filter[2] > current_day){
+          date_filter[2] = current_day
+        }
+        
+        overviewplot_1("visit_schedule_date","Number of onboarded participants",input$date_type5,
+                       input$age_filter, date_filter,input$race_filter,input$gender_filter)
         
       })
     })
@@ -630,15 +650,150 @@ server <- function(input, output) {
       age_histogram("age_combine","appointment_call_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
-    
-    
-    
-    output$plot5 <- renderPlot({
-        hist(rnorm(500))
+    #SCHEDULED VISITS#
+    ###demographics scheduled visits###
+    output$pie_race4 <- renderPlotly({
+      demographics_pie("race_combine","visit_schedule_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
-    output$plot6 <- renderPlot({
-        hist(rnorm(500))
+    
+    output$pie_gender4 <- renderPlotly({
+      demographics_pie("sex_combine","visit_schedule_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
+    
+    output$pie_employee4 <- renderPlotly({
+      demographics_pie("employ_status_desc","visit_schedule_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$pie_ccfpatient4 <- renderPlotly({
+      demographics_pie("ccf_patient","visit_schedule_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$bar_city4 <- renderPlotly({
+      city_barplot("pat_city","visit_schedule_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$bar_county4 <- renderPlotly({
+      city_barplot("pat_county","visit_schedule_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$age_histo4 <- renderPlotly({
+      age_histogram("age_combine","visit_schedule_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    #ONBOARDED #
+    ###demographics of onboarded participants###
+    output$pie_race5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      demographics_pie("race_combine","visit_schedule_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$pie_gender5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      demographics_pie("sex_combine","visit_schedule_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$pie_employee5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      demographics_pie("employ_status_desc","visit_schedule_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$pie_ccfpatient5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      demographics_pie("ccf_patient","visit_schedule_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$bar_city5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      city_barplot("pat_city","visit_schedule_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$bar_county5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      city_barplot("pat_county","visit_schedule_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    output$age_histo5 <- renderPlotly({
+      
+      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
+      date_filter = input$date_filter
+      
+      if(input$date_filter[1] > current_day){
+        date_filter[1] <- current_day
+      }
+      
+      if(input$date_filter[2] > current_day){
+        date_filter[2] = current_day
+      }
+      
+      age_histogram("age_combine","visit_schedule_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
 }
 
 shinyApp(ui, server)
