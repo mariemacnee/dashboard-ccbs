@@ -436,7 +436,7 @@ server <- function(input, output) {
         valueBox(
           value_input, paste0("Contacted (yesterday: ", data_mod.df %>% 
                                 filter(initial_contact_date == current_day - days(1)) %>% 
-                                nrow(.),")"), icon = icon("message-check"),
+                                nrow(.),")"), icon = icon("comment"),
             color = "light-blue"
         )
     })
