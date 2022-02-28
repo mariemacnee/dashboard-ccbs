@@ -7,6 +7,7 @@ library(shinyThings)
 library(tidyverse)
 library(plotly)
 library(lubridate)
+library(DT)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
@@ -299,8 +300,8 @@ ui <- dashboardPage(
                                      ),
                                      column(width=12,
                                             plotlyOutput("sign_up_bar", height = 300)
-                                     ))
-                          
+                                     )),
+                            tabPanel("Contact preferrences")
                         )),
                     box(title = "Contact", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
@@ -325,11 +326,15 @@ ui <- dashboardPage(
                                             plotlyOutput("pie_whether_eligible", height = 250)
                                      ),
                                      column(width = 6,
-                                            plotlyOutput("pie_whether_ms_relative", height = 250)
-                                     ),
-                                     column(width = 6,
                                             plotlyOutput("pie_saturday_mri", height = 250)
                                      )),
+                            tabPanel("MS relatives",
+                                     br(),
+                                     column(width = 12,
+                                            plotlyOutput("pie_whether_ms_relative")),
+                                     column(width = 12,
+                                            DT::dataTableOutput("ms_relative_table"))
+                                     )
                         )),
                     box(title = "Appointment", solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
@@ -614,6 +619,28 @@ server <- function(input, output) {
     output$pie_whether_ms_relative <- renderPlotly({
       demographics_pie("whether_ms_relative","appointment_call_date","Whether MS relative",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
+    
+    output$ms_relative_table <- DT::renderDataTable({
+      
+      data_mod.df <- data_mod.df %>% 
+        mutate(age_combine1 = age_combine,
+               race_combine1 = race_combine,
+               sex_combine1 = sex_combine) %>%  
+        filter(initial_contact_date >= input$date_filter[1] & initial_contact_date <= input$date_filter[2],
+               age_combine1 >= input$age_filter[1] & age_combine <= input$age_filter[2],
+               race_combine1 %in% input$race_filter,
+               sex_combine1 %in% input$gender_filter,
+               whether_ms_relative == 1) %>%  
+        select(record_id,sex_combine,age_combine,step,study_id, visit_schedule_date)
+      
+     data_mod.df
+      
+    }, escape = FALSE, 
+    filter = 'top',
+    rownames = FALSE,
+    options = list(paging = FALSE, scrollY= "250px", scrollCollapse = TRUE, dom = 't',
+                   columnDefs = list(list(className = 'dt-center', targets = "_all"))
+    ))
     
     #saturday mri
     output$pie_saturday_mri <- renderPlotly({
