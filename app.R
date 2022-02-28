@@ -152,6 +152,8 @@ city_barplot <- function(var_demo,var_date,title_sel,age_filter,date_filter,race
   
   number_values = as.numeric(sum(bar_input.df[!is.na(bar_input.df["selected_var_demo"]),"n"]))
   
+  bar_input.df = bar_input.df %>% top_n(n, 20)
+  
   py <- plot_ly(data = bar_input.df,
                 type = "bar",
                 x = ~selected_var_demo,
@@ -365,7 +367,7 @@ ui <- dashboardPage(
                   box(title = "Demographics of different steps", solidHeader = T,  status = "primary", width=12,
                       column(width=12,
                              br(),
-                             column(3,
+                             box(width=3,title="Sign up",
                                     plotlyOutput("pie_race1", height = 250),
                                     plotlyOutput("pie_gender1", height = 250),
                                     plotlyOutput("pie_employee1", height = 250),
@@ -374,7 +376,7 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county1", height = 400),
                                     plotlyOutput("age_histo1", height = 200)
                              ),
-                             column(3,
+                             box(width=3,title="Contacted",
                                     plotlyOutput("pie_race2", height = 250),
                                     plotlyOutput("pie_gender2", height = 250),
                                     plotlyOutput("pie_employee2", height = 250),
@@ -383,7 +385,7 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county2", height = 400),
                                     plotlyOutput("age_histo2", height = 200)
                              ),
-                             column(3,
+                             box(width=3,title="Appointment call",
                                     plotlyOutput("pie_race3", height = 250),
                                     plotlyOutput("pie_gender3", height = 250),
                                     plotlyOutput("pie_employee3", height = 250),
@@ -392,7 +394,7 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county3", height = 400),
                                     plotlyOutput("age_histo3", height = 200)
                              ),
-                             column(3,
+                             box(width=3,title="Scheduled visit",
                                     plotlyOutput("pie_race4", height = 250),
                                     plotlyOutput("pie_gender4", height = 250),
                                     plotlyOutput("pie_employee4", height = 250),
@@ -564,11 +566,11 @@ server <- function(input, output) {
     })
     
     output$bar_city1 <- renderPlotly({
-    city_barplot("pat_city","sign_up_datetime","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot("pat_city","sign_up_datetime","Top 20 City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county1 <- renderPlotly({
-      city_barplot("pat_county","sign_up_datetime","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot("pat_county","sign_up_datetime","Top 20 County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo1 <- renderPlotly({
