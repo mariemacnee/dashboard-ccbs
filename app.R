@@ -121,7 +121,7 @@ demographics_pie <- function(var_demo,var_date,title_sel,age_filter,date_filter,
     ungroup() %>% 
     mutate(prop = n/sum(n)*100)
   
-  number_values = sum(pie_input.df$n)
+  number_values = as.numeric(sum(pie_input.df[!is.na(pie_input.df["selected_var_demo"]),"n"]))
   
   plot_ly(pie_input.df,
           type = "pie",
@@ -138,7 +138,6 @@ demographics_pie <- function(var_demo,var_date,title_sel,age_filter,date_filter,
 city_barplot <- function(var_demo,var_date,title_sel,age_filter,date_filter,race_filter,gender_filter){
   
   bar_input.df <- data_mod.df %>% 
-    ##duplicate to avoid issues when we rename certain variables 
     mutate(age_combine1 = age_combine,
            race_combine1 = race_combine,
            sex_combine1 = sex_combine) %>% 
@@ -148,17 +147,16 @@ city_barplot <- function(var_demo,var_date,title_sel,age_filter,date_filter,race
            selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) %>%
-    group_by(selected_var_demo) %>% 
-    mutate(count = n()) 
+    count(selected_var_demo)
   
-  number_values = sum(!is.na(bar_input.df$count))
+  number_values = as.numeric(sum(bar_input.df[!is.na(bar_input.df["selected_var_demo"]),"n"]))
   
   py <- plot_ly(data = bar_input.df,
                 type = "bar",
                 x = ~selected_var_demo,
                 hoverinfo = "text",
-                text = ~paste("Number of individuals:", count),
-                y = ~count) %>%
+                text = paste("Number of individuals:",bar_input.df$n),
+                y = ~n) %>%
     layout(title = paste0(title_sel, " (n= ",number_values, ")"),
            yaxis = list(title = ""),
            xaxis = list(title = "",
