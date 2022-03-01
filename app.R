@@ -96,7 +96,7 @@ overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter
                   x = ~Dates,
                   y = ~count) %>%
       rangeslider(thickness = 0.1 ) %>% 
-      layout(yaxis = list(title = xaxis),
+      layout(yaxis = list(title = xaxis,),
              xaxis = list(title = ""))
     
   }
@@ -133,7 +133,9 @@ demographics_pie <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,
           hoverinfo = "text",
           text = ~paste("Number of individuals:",n),
           marker = list(line = list(color = 'white', width = 1))) %>% 
-    layout(title = paste0(title_sel, " (n= ",number_values, ")"))
+    layout(title = list( text = paste0(title_sel, " (n= ",number_values, ")"),
+                         font = list(family = "Arial",
+                                     size = 14)))
   
 }
 
@@ -161,7 +163,9 @@ city_barplot <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,date
                 hoverinfo = "text",
                 text = paste("Number of individuals:",bar_input.df$n),
                 y = ~n) %>%
-    layout(title = paste0(title_sel, " (n= ",number_values, ")"),
+    layout(title = list( text = paste0(title_sel, " (n= ",number_values, ")"),
+                                font = list(family = "Arial",
+                                            size = 14)),
            yaxis = list(title = ""),
            xaxis = list(title = "",
                         tickangle = -45,
@@ -190,7 +194,9 @@ age_histogram <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,dat
                 nbinsx = binsize,
                 type = "histogram") %>%
     layout(xaxis = list(title = ""),
-           title = paste0(title_sel, " (n= ",number_values, ")"))
+           title = list( text = paste0(title_sel, " (n= ",number_values, ")"),
+                       font = list(family = "Arial",
+                                   size = 14)))
   
 }
   
@@ -202,8 +208,6 @@ preferred_days <- function(){
     as_tibble() %>% 
     mutate(day = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")) %>% 
     mutate(prop = value/nrow(data_mod.df)*100)
-  
-  
   
   plot_ly(pl_input.df,
           type = "bar",
