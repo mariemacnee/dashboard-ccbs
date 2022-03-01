@@ -24,10 +24,10 @@ data_mod.df <- data %>%
          visit_schedule_date = gsub(" .*","",visit_schedule_date) %>% as.Date()) %>% 
   mutate(race_combine = ifelse(is.na(race_combine),"Unknown/ not disclosed",race_combine),
          sex_combine = ifelse(is.na(sex_combine),"Unknown/ not disclosed",sex_combine)) %>% 
-  mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) %>% 
-  mutate(weekday_prefer_Saturday = sample(c(1,0),nrow(.),replace = T),
-         weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
-         daytime_prefer_morning = sample(c(1,0),nrow(.),replace = T))
+  mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) #%>% 
+  # mutate(weekday_prefer_Saturday = sample(c(1,0),nrow(.),replace = T),
+  #        weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
+  #        daytime_prefer_morning = sample(c(1,0),nrow(.),replace = T))
   
 
 
