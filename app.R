@@ -308,7 +308,8 @@ ui <- dashboardPage(
                     )
                 ),
                 fluidRow(
-                  box(title = "Onboarded", solidHeader = T,  status = "success", width=12,
+                  box(title = p("Onboarded participants", actionButton("signup_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                      solidHeader = T,  status = "success", width=12,
                       tabsetPanel(
                         tabPanel("First visit",
                                  br(),
@@ -341,7 +342,8 @@ ui <- dashboardPage(
                                  column(width=3,
                                          plotlyOutput("bar_county5", height = 300)))
                       )),
-                    box(title="Sign up", solidHeader = F, status = "primary",width=6,
+                    box(title= p("Sign up", actionButton("signup_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                        solidHeader = F, status = "primary",width=6,
                         tabsetPanel(
                             tabPanel("History",
                                      br(),
@@ -361,7 +363,8 @@ ui <- dashboardPage(
                                             plotlyOutput("preferred_daytime", height = 387)
                                      ))
                         )),
-                    box(title = "Contact", solidHeader = F,  status = "primary",width=6,
+                    box(title = p("Contact", actionButton("contact_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                        solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
                             tabPanel("History",
                                      br(),
@@ -394,7 +397,8 @@ ui <- dashboardPage(
                                             DT::dataTableOutput("ms_relative_table"))
                                      )
                         )),
-                    box(title = "Appointment", solidHeader = F,  status = "primary",width=6,
+                    box(title = p("Appointment calls", actionButton("appointment_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                        solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
                             tabPanel("Appointment call",
                                      br(),
@@ -407,7 +411,8 @@ ui <- dashboardPage(
                                             plotlyOutput("appointment_bar", height = 300)
                                      ))
                         )),
-                    box(title = "Scheduled visits", solidHeader = F,  status = "primary",width=6,
+                    box(title = p("Scheduled visits",actionButton("scheduled_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                        solidHeader = F,  status = "primary",width=6,
                         tabsetPanel(
                           tabPanel("Visits",
                                    br(),
@@ -433,7 +438,10 @@ ui <- dashboardPage(
                   box(title = "Demographics of different steps", solidHeader = T,  status = "primary", width=12,
                       column(width=12,
                              br(),
-                             box(width=3,title="Sign up",
+                             box(width=3,
+                                 title= p("Sign up", actionButton("signup_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                                 solidHeader = T,  
+                                 status = "primary",
                                  br(),
                                     plotlyOutput("pie_race1", height = 250),
                                     plotlyOutput("pie_gender1", height = 250),
@@ -443,9 +451,13 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county1", height = 400),
                                     plotlyOutput("age_histo1", height = 200)
                              ),
-                             box(width=3,title = div("Contacted",buttonGroup( inputId = "date_type6",
-                                                 choices = c("All", "Only eligable"), 
-                                                 selected = "All", multiple= F)),
+                             box(width=3,
+                                 title = div(p("Contacted", actionButton("contact_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                                             buttonGroup(inputId = "date_type6",
+                                                         choices = c("All", "Only eligable"), 
+                                                         selected = "All", multiple= F)), 
+                                   solidHeader = T,  
+                                   status = "primary",
                                     br(),
                                     plotlyOutput("pie_race2", height = 250),
                                     plotlyOutput("pie_gender2", height = 250),
@@ -455,7 +467,10 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county2", height = 400),
                                     plotlyOutput("age_histo2", height = 200)
                              ),
-                             box(width=3,title="Appointment call",
+                             box(width=3, 
+                                 title=  p("Appointment call",actionButton("appointment_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                                 solidHeader = T,  
+                                 status = "primary",
                                  br(),
                                     plotlyOutput("pie_race3", height = 250),
                                     plotlyOutput("pie_gender3", height = 250),
@@ -465,7 +480,10 @@ ui <- dashboardPage(
                                     plotlyOutput("bar_county3", height = 400),
                                     plotlyOutput("age_histo3", height = 200)
                              ),
-                             box(width=3,title="Scheduled visit",
+                             box(width=3,
+                                 title= p("Scheduled visit",actionButton("scheduled_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                                 solidHeader = T,
+                                 status = "primary",
                                  br(),
                                     plotlyOutput("pie_race4", height = 250),
                                     plotlyOutput("pie_gender4", height = 250),
@@ -926,6 +944,121 @@ server <- function(input, output) {
       }
       
       age_histogram(data_mod.df,"age_combine","visit_schedule_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    })
+    
+    
+    #### HELP TEXT ####
+
+      observeEvent(input$signup_help, {
+        showModal(modalDialog(
+          HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                     "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                     paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                           "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                     sep = "<br>")),
+          footer = tagList(
+            modalButton("OK"),
+          )
+        ))
+      })
+    
+    observeEvent(input$contact_help, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$appointment_help, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$scheduled_help, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$signup_help2, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$contact_help2, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$appointment_help2, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
+    observeEvent(input$scheduled_help2, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
     })
     
 }
