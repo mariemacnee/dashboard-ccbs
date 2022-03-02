@@ -57,7 +57,7 @@ overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter
     group_by(selected_var) %>% 
     summarise(n = n())
   
-  #validate(need(nrow(data_filt.df) > 0, message = "No data after filtering."))
+  validate(need(nrow(data_filt.df) > 0, message = "No data after filtering."))
   
   ##if data should be aggregated per week 
   if(date_sel == "Per week"){
