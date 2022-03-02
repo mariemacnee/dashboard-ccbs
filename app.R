@@ -15,21 +15,32 @@ data <- read_csv("sample_data_dashboard.csv")
 
 end_date <- as.Date("2022-12-31") ##set a time in the future to account for visits that are sheduled for the future 
 current_day <- Sys.time()
-  
+
+firstup <- function(x) {
+  x <- tolower(x)
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
+}
+
 #data modification 
 data_mod.df <- data %>% 
+  mutate(first_visit_date = ifelse(whether_first_visit == 1, as.character(visit_schedule_date), NA)) %>%   
   mutate(sign_up_datetime = gsub(" .*","",sign_up_datetime) %>% as.Date(),
          initial_contact_date = gsub(" .*","",initial_contact_date) %>% as.Date(),
          appointment_call_date = gsub(" .*","",appointment_call_date) %>% as.Date(),
-         visit_schedule_date = gsub(" .*","",visit_schedule_date) %>% as.Date()) %>% 
+         visit_schedule_date = gsub(" .*","",visit_schedule_date) %>% as.Date(),
+         first_visit_date =  gsub(" .*","",first_visit_date) %>% as.Date()) %>% 
   mutate(race_combine = ifelse(is.na(race_combine),"Unknown/ not disclosed",race_combine),
          sex_combine = ifelse(is.na(sex_combine),"Unknown/ not disclosed",sex_combine)) %>% 
-  mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) #%>% 
+  mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) %>% 
+  mutate(pat_city = firstup(pat_city)) %>% 
+  mutate(pat_county = firstup(pat_county)) %>% 
+  mutate(pat_county = firstup(employ_status_desc)) 
+  
   # mutate(weekday_prefer_Saturday = sample(c(1,0),nrow(.),replace = T),
   #        weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
   #        daytime_prefer_morning = sample(c(1,0),nrow(.),replace = T))
   
-
 
 #predefined plot functions 
 overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter,gender_filter){
@@ -45,6 +56,8 @@ overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter
            sex_combine %in% gender_filter) %>% 
     group_by(selected_var) %>% 
     summarise(n = n())
+  
+  #validate(need(nrow(data_filt.df) > 0, message = "No data after filtering."))
   
   ##if data should be aggregated per week 
   if(date_sel == "Per week"){
@@ -125,6 +138,8 @@ demographics_pie <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,
   
   number_values = as.numeric(sum(pie_input.df[!is.na(pie_input.df["selected_var_demo"]),"n"]))
   
+  validate(need(nrow(pie_input.df) > 0, message = "No data after filtering."))
+  
   plot_ly(pie_input.df,
           type = "pie",
           labels = ~selected_var_demo,
@@ -152,6 +167,8 @@ city_barplot <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,date
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) %>%
     count(selected_var_demo)
+  
+  validate(need(nrow(bar_input.df) > 0, message = "No data after filtering."))
   
   number_values = as.numeric(sum(bar_input.df[!is.na(bar_input.df["selected_var_demo"]),"n"]))
   
@@ -186,6 +203,8 @@ age_histogram <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,dat
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) 
   
+  validate(need(nrow(histo_input.df) > 0, message = "No data after filtering."))
+  
   number_values = sum(!is.na(histo_input.df$selected_var_demo))
   binsize = age_filter[2] - (age_filter[1]-1)
   
@@ -215,7 +234,7 @@ preferred_days <- function(){
           y = ~prop,
           hoverinfo = "text",
           hovertext = paste("Number of individuals:",pl_input.df$value)) %>%
-    layout(title = paste0("Preffered days of the week to be contaced"),
+    layout(title = paste0("Preferred days of the week to be contaced"),
            yaxis = list(title = "Proportion of participants (%)"),
            xaxis = list(title = "",
                         tickangle = -45,
@@ -241,7 +260,7 @@ preferred_time <- function(){
           y = ~prop,
           hoverinfo = "text",
           hovertext = paste("Number of individuals:",pl_input.df$value)) %>%
-    layout(title = paste0("Preffered day time to be contaced"),
+    layout(title = paste0("Preferred day time to be contaced"),
            yaxis = list(title = "Proportion of participants (%)"),
            xaxis = list(title = "",
                         tickangle = -45,
@@ -260,13 +279,13 @@ ui <- dashboardPage(
         menuItem("About", tabName = "about", icon = icon("question"))
         ),
         br(),
-        dateRangeInput("date_filter", "Date range",
+        dateRangeInput("date_filter", h5("Date range"),
                        min= "2021-12-01",
                        max= end_date,
                        start= "2021-12-01",
                        end= Sys.Date()),
         checkboxGroupInput("gender_filter", 
-                           h4("Gender"), 
+                           h5("Gender"), 
                            choices = list("Male", 
                                           "Female", 
                                           "Other",
@@ -276,10 +295,10 @@ ui <- dashboardPage(
                                         "Other",
                                         "Unknown/ not disclosed")),
         sliderInput("age_filter",
-                    h4("Age"), 
+                    h5("Age"), 
                     min = 20, max = 100, value = c(20, 100)),
         checkboxGroupInput("race_filter", 
-                           h4("Race/Ethnicity"), 
+                           h5("Race/Ethnicity"), 
                            choices = list("White", 
                                           "Black/ African American", 
                                           "Hispanic/ Latino",
@@ -297,7 +316,10 @@ ui <- dashboardPage(
                                           "Native American",
                                           "Native Hawaiian and Other Pacific Islander",
                                           "Multiracial/Multicultural",
-                                          "Unknown/ not disclosed"))
+                                          "Unknown/ not disclosed")),
+        br()
+        #,
+        #div(actionButton("submit_filter", "Submit filter"), align= "center", style="font-weight:bold")
     ),
     dashboardBody(
         style = "background-color:#2C3E50;",
@@ -312,7 +334,7 @@ ui <- dashboardPage(
                     )
                 ),
                 fluidRow(
-                  box(title = p("Onboarded participants", actionButton("signup_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                  box(title = p("Onboarded participants", actionButton("onboarded_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
                       solidHeader = T,  status = "success", width=12,
                       tabsetPanel(
                         tabPanel("First visit",
@@ -547,7 +569,6 @@ server <- function(input, output) {
     output$box_visit_scheduled <- renderValueBox({
       
       value_input <- data_mod.df %>% 
-        #filter(step %in% c("first_visit","appointment_scheduled")) %>%
         filter(!is.na(visit_schedule_date)) %>%
         nrow(.)
       
@@ -563,13 +584,12 @@ server <- function(input, output) {
       
       #not sure if this is the right way to get this number 
       value_input <- data_mod.df %>% 
-        filter(whether_first_visit == 1) %>%
-        filter(!is.na(whether_first_visit)) %>%
+        filter(!is.na(first_visit_date)) %>%
         nrow(.)
       
         valueBox(
           value_input, paste0("Onboarded (yesterday: ", data_mod.df %>% 
-                                filter(visit_schedule_date == current_day  - days(1) & whether_first_visit == 1) %>% 
+                                filter(first_visit_date == current_day - days(1)) %>% 
                                 nrow(.),")"),icon = icon("users"),
             color = "green"
         )
@@ -626,20 +646,9 @@ server <- function(input, output) {
     observeEvent(input$date_type5,{
       
       output$onboarded_bar <- renderPlotly({
-
-        #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-        date_filter = input$date_filter
         
-        if(input$date_filter[1] > current_day){
-         date_filter[1] <- current_day
-        }
-        
-        if(input$date_filter[2] > current_day){
-          date_filter[2] = current_day
-        }
-        
-        overviewplot_1("visit_schedule_date","Number of onboarded participants",input$date_type5,
-                       input$age_filter, date_filter,input$race_filter,input$gender_filter)
+        overviewplot_1("first_visit_date","Number of onboarded participants",input$date_type5,
+                       input$age_filter, input$date_filter,input$race_filter,input$gender_filter)
         
       })
     })
@@ -840,119 +849,56 @@ server <- function(input, output) {
     ###demographics of onboarded participants###
     output$pie_race5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      demographics_pie(data_mod.df,"race_combine","visit_schedule_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"race_combine","first_visit_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$pie_gender5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      demographics_pie(data_mod.df,"sex_combine","visit_schedule_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"sex_combine","first_visit_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$pie_employee5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      demographics_pie(data_mod.df,"employ_status_desc","visit_schedule_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"employ_status_desc","first_visit_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$pie_ccfpatient5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      demographics_pie(data_mod.df,"ccf_patient","visit_schedule_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"ccf_patient","first_visit_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_city5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      city_barplot(data_mod.df,"pat_city","visit_schedule_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_city","first_visit_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      city_barplot(data_mod.df,"pat_county","visit_schedule_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_county","first_visit_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo5 <- renderPlotly({
       
-      #not sure about the variable as we need Dates as input. I changed the date filter here to remove future visits assuming all scheduled visits are happening (probably not always true)
-      date_filter = input$date_filter
-      
-      if(input$date_filter[1] > current_day){
-        date_filter[1] <- current_day
-      }
-      
-      if(input$date_filter[2] > current_day){
-        date_filter[2] = current_day
-      }
-      
-      age_histogram(data_mod.df,"age_combine","visit_schedule_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      age_histogram(data_mod.df,"age_combine","first_visit_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     
     #### HELP TEXT ####
 
+    observeEvent(input$onboarded_help, {
+      showModal(modalDialog(
+        HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
+                   "Here, all genes from the selected region are used as input to analyze whether the genes significantly overlap with an annotated gene set from the libraries.
+                                                          Libraries can be changed using the dropdown menu.", 
+                   paste("More information about enrichment analyses can be found", tags$a(href="https://pubmed.ncbi.nlm.nih.gov/19033363/", "here", target="_blank"),
+                         "and descriptions of the available libraries can be found", tags$a(href="https://maayanlab.cloud/Enrichr/#libraries", "here.", target="_blank")),
+                   sep = "<br>")),
+        footer = tagList(
+          modalButton("OK"),
+        )
+      ))
+    })
+    
       observeEvent(input$signup_help, {
         showModal(modalDialog(
           HTML(paste("Enrichment analysis is a computational method for inferring knowledge about an input gene set by comparing it to annotated gene sets representing prior biological knowledge.",
