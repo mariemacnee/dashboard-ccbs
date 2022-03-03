@@ -196,7 +196,10 @@ overviewplot_1 <- function(data_mod.df,var,xaxis,date_sel,age_filter,date_filter
                 name = "30 day average") %>% 
       layout(yaxis = list(title = xaxis),
              xaxis = list(title = ""),
-             legend = list(x = 0.1, y = 0.9))
+             #legend = list(x = 0.1, y = 0.9),
+             legend = list(orientation = "h",  
+                           xanchor = "center",  
+                           x = 0.5))
     
   }
   
@@ -837,11 +840,11 @@ server <- function(input, output) {
     })
     
     output$bar_city1 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_city","sign_up_datetime","Top 20 City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_city","sign_up_datetime","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county1 <- renderPlotly({
-      city_barplot(data_mod.df,"pat_county","sign_up_datetime","Top 20 County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_county","sign_up_datetime","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo1 <- renderPlotly({
@@ -894,11 +897,11 @@ server <- function(input, output) {
       })
       
       output$bar_city2 <- renderPlotly({
-        city_barplot(data_mod_sel.df,"pat_city","initial_contact_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+        city_barplot(data_mod_sel.df,"pat_city","initial_contact_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
       })
       
       output$bar_county2 <- renderPlotly({
-        city_barplot(data_mod_sel.df,"pat_county","initial_contact_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+        city_barplot(data_mod_sel.df,"pat_county","initial_contact_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
       })
       
       output$age_histo2 <- renderPlotly({
@@ -968,11 +971,11 @@ server <- function(input, output) {
     })
     
     output$bar_city3 <- renderPlotly({
-      city_barplot(data_mod.df,"pat_city","appointment_call_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_city","appointment_call_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county3 <- renderPlotly({
-      city_barplot(data_mod.df,"pat_county","appointment_call_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_county","appointment_call_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo3 <- renderPlotly({
@@ -998,11 +1001,11 @@ server <- function(input, output) {
     })
     
     output$bar_city4 <- renderPlotly({
-      city_barplot(data_mod.df,"pat_city","visit_schedule_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_city","visit_schedule_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county4 <- renderPlotly({
-      city_barplot(data_mod.df,"pat_county","visit_schedule_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_county","visit_schedule_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo4 <- renderPlotly({
@@ -1033,12 +1036,12 @@ server <- function(input, output) {
     
     output$bar_city5 <- renderPlotly({
       
-      city_barplot(data_mod.df,"pat_city","first_visit_date","City",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_city","first_visit_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$bar_county5 <- renderPlotly({
       
-      city_barplot(data_mod.df,"pat_county","first_visit_date","County",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod.df,"pat_county","first_visit_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
     })
     
     output$age_histo5 <- renderPlotly({
