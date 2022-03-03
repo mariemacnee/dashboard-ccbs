@@ -35,7 +35,7 @@ data_mod.df <- data %>%
   mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) %>% 
   mutate(pat_city = firstup(pat_city)) %>% 
   mutate(pat_county = firstup(pat_county)) %>% 
-  mutate(pat_county = firstup(employ_status_desc)) 
+  mutate(employ_status_desc = firstup(employ_status_desc)) 
   
   # mutate(weekday_prefer_Saturday = sample(c(1,0),nrow(.),replace = T),
   #        weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
@@ -712,7 +712,7 @@ server <- function(input, output) {
           p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
             paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
             paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
-        icon = icon("phone"),
+        icon = icon("calendar"),
         color = "navy"
       )
     })
