@@ -41,9 +41,66 @@ data_mod.df <- data %>%
   #        weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
   #        daytime_prefer_morning = sample(c(1,0),nrow(.),replace = T))
   
+#daily/weekly increase/decrease 
+
+trend_time <- function(data_mod.df,current_day, var){
+  
+  percent_diff <- function(value_now,value_before){
+    
+    out_value <- (value_now/value_before-1)*100
+    
+    out_value <- case_when(is.nan(out_value) ~0,
+                           out_value == Inf ~100,
+                           TRUE ~ out_value)
+    
+    return(out_value)
+    
+  }
+  
+  data_mod_sel.df <- data_mod.df %>% 
+    rename(var_sel = var)
+  
+  
+  value_yesterday <- data_mod_sel.df %>% 
+    filter(var_sel == current_day - days(1)) %>% 
+    nrow(.)
+  
+  value_yesterday_b <- data_mod_sel.df %>% 
+    filter(var_sel == current_day - days(2)) %>% 
+    nrow(.)
+  
+  value_7days <- data_mod_sel.df %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(7)),as.Date(current_day- days(1)), by="days")) %>% 
+    nrow(.)
+  
+  value_7days_b <- data_mod_sel.df %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(14)),as.Date(current_day- days(8)), by="days")) %>% 
+    nrow(.)
+  
+  value_month <- data_mod_sel.df %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(30)),as.Date(current_day- days(1)), by="days")) %>% 
+    nrow(.)
+  
+  value_month_b <- data_mod_sel.df %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(60)),as.Date(current_day- days(31)), by="days")) %>%
+    nrow(.)
+  
+  yesterday_per <- percent_diff(value_yesterday,value_yesterday_b) %>% round(.,1) %>% ifelse(. >0,paste0("+",.),.)
+  
+  day7_per <- percent_diff(value_7days,value_7days_b) %>% round(.,1) %>% ifelse(. >0,paste0("+",.),.)
+  
+  month_per <- percent_diff(value_month,value_month_b) %>% round(.,1) %>% ifelse(. >0,paste0("+",.),.)
+  
+  return(list(value_yesterday,yesterday_per,value_7days,day7_per,value_month,month_per))
+}
+
+
+
+
+
 
 #predefined plot functions 
-overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter,gender_filter){
+overviewplot_1 <- function(data_mod.df,var,xaxis,date_sel,age_filter,date_filter,race_filter,gender_filter){
   
   start_date = as.Date(date_filter[1])
   end_date = as.Date(date_filter[2])
@@ -101,22 +158,51 @@ overviewplot_1 <- function(var,xaxis,date_sel,age_filter,date_filter,race_filter
       rangeslider(thickness = 0.1 ) %>% 
       layout(yaxis = list(title = xaxis),
              xaxis = list(title = ""))
-
+    
   } else{
+    
+    date_input.df <- date_input.df %>% 
+      mutate(day7_avg = 0,
+             month_avg  = 0)
+    
+    for(i in 1:nrow(date_input.df)){
+      
+      end_day <- ifelse(i-6>1,i-6,1)
+      
+      end_month <- ifelse(i-30>1,i-30,1)
+      
+      date_input.df$day7_avg[i] <- mean(date_input.df$count[end_day:i],na.rm = T)
+      date_input.df$month_avg[i] <- mean(date_input.df$count[end_month:i],na.rm = T)
+      
+    } 
     
     py <- plot_ly(data = date_input.df,
                   type = "bar",
                   x = ~Dates,
-                  y = ~count) %>%
+                  y = ~count,
+                  name = "Number of individuals") %>%
       rangeslider(thickness = 0.1 ) %>% 
-      layout(yaxis = list(title = xaxis,),
-             xaxis = list(title = ""))
+      add_trace(type = 'scatter', 
+                mode = 'lines',
+                line = list(color = "orange"),
+                x = ~Dates,
+                y = ~day7_avg,
+                name = "7 day average") %>% 
+      add_trace(type = 'scatter', 
+                mode = 'lines',
+                line = list(color = "yellow"),
+                x = ~Dates,
+                y = ~month_avg,
+                name = "30 day average") %>% 
+      layout(yaxis = list(title = xaxis),
+             xaxis = list(title = ""),
+             legend = list(x = 0.1, y = 0.9))
     
   }
   
   return(py)
   
-}
+} 
 
 demographics_pie <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,date_filter,race_filter,gender_filter){
   
@@ -325,10 +411,11 @@ ui <- dashboardPage(
         style = "background-color:#2C3E50;",
         tabItem(tabName = "dashboard",
                 fluidRow(
-                    column(12, offset=1,
+                    column(12, 
                     valueBoxOutput("box_signup", width=2),
                     valueBoxOutput("box_contact", width=2),
                     valueBoxOutput("box_app_calls", width=2),
+                    valueBoxOutput("box_succ_app_calls", width=2),
                     valueBoxOutput("box_visit_scheduled", width=2),
                     valueBoxOutput("box_onboard", width = 2)
                     )
@@ -433,6 +520,11 @@ ui <- dashboardPage(
                                                          choices = c("Cumulative", "Per day", "Per week"), 
                                                          selected = "Cumulative", multiple= F)
                                      ),
+                                     column(width=6,
+                                            buttonGroup( inputId = "date_type3_1",
+                                                         choices = c("All","Only sucessful calls"), 
+                                                         selected = "All", multiple= F)
+                                     ),
                                      column(width=12,
                                             plotlyOutput("appointment_bar", height = 300)
                                      ))
@@ -529,27 +621,39 @@ server <- function(input, output) {
 
     output$box_signup <- renderValueBox({
       
-        valueBox(
-          #assuming that all individuals in this file signed up 
-          nrow(data), paste0("Sign up (yesterday: ", data_mod.df %>% 
-                                filter(sign_up_datetime == current_day - days(1)) %>% 
-                                nrow(.),")"), icon = icon("sign-in"),
-            color = "aqua"
-        )
+      
+      past_values <- trend_time(data_mod.df,current_day,"sign_up_datetime")
+      
+      valueBox(
+        nrow(data), 
+        p(tags$p("Sign up", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+        icon = icon("sign-in"),
+        color = "aqua"
+      )
+        
     })
     
     output$box_contact <- renderValueBox({
       
       value_input <- data_mod.df %>% 
-        filter(!is.na(initial_contact_response)) %>% 
+        filter(!is.na(initial_contact_date)) %>% 
         nrow(.)
       
-        valueBox(
-          value_input, paste0("Contacted (yesterday: ", data_mod.df %>% 
-                                filter(initial_contact_date == current_day - days(1)) %>% 
-                                nrow(.),")"), icon = icon("comment"),
-            color = "light-blue"
-        )
+      
+      past_values <- trend_time(data_mod.df,current_day,"initial_contact_date")
+      
+      valueBox(
+        value_input, 
+        p(tags$p("Contacted", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+        icon = icon("comment"),
+        color = "light-blue"
+      )
     })
     
     output$box_app_calls <- renderValueBox({
@@ -558,24 +662,57 @@ server <- function(input, output) {
                   filter(!is.na(appointment_call_date)) %>%
                   nrow(.)
       
+      past_values <- trend_time(data_mod.df,current_day,"appointment_call_date")
+      
         valueBox(
-          value_input, paste0("Appointment calls (yesterday: ", data_mod.df %>% 
-                                filter(appointment_call_date == current_day - days(1)) %>% 
-                                nrow(.),")"), icon = icon("phone"),
-            color = "blue"
+          value_input, 
+          p(tags$p("Appointment calls", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          icon = icon("phone"),
+          color = "blue"
         )
     })
     
-    output$box_visit_scheduled <- renderValueBox({
+    output$box_succ_app_calls <- renderValueBox({
       
+      data_mod_sel.df <- data_mod.df %>%
+        filter(!is.na(appointment_call_date),
+               !is.na(visit_schedule_date)) 
+      
+      value_input <- data_mod_sel.df %>% 
+        nrow(.)
+      
+      past_values <- trend_time(data_mod_sel.df,current_day,"appointment_call_date")
+      
+      valueBox(
+        value_input, 
+        p(tags$p("Successful  calls", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+        icon = icon("phone"),
+        color = "blue"
+      )
+    })
+    
+    output$box_visit_scheduled <- renderValueBox({
+
       value_input <- data_mod.df %>% 
         filter(!is.na(visit_schedule_date)) %>%
         nrow(.)
       
+      
+      past_values <- trend_time(data_mod.df,current_day,"visit_schedule_date")
+      
       valueBox(
-        value_input, paste0("Scheduled visits (yesterday: ", data_mod.df %>% 
-                              filter(visit_schedule_date == current_day - days(1)) %>% 
-                              nrow(.),")"), icon = icon("phone"),
+        value_input, 
+        p(tags$p("Scheduled visits", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+        icon = icon("phone"),
         color = "navy"
       )
     })
@@ -587,19 +724,26 @@ server <- function(input, output) {
         filter(!is.na(first_visit_date)) %>%
         nrow(.)
       
-        valueBox(
-          value_input, paste0("Onboarded (yesterday: ", data_mod.df %>% 
-                                filter(first_visit_date == current_day - days(1)) %>% 
-                                nrow(.),")"),icon = icon("users"),
-            color = "green"
-        )
+      
+      past_values <- trend_time(data_mod.df,current_day,"first_visit_date")
+      
+      valueBox(
+        value_input, 
+        p(tags$p("Onboarded", style = "font-size: 150%"),
+          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+        icon = icon("users"),
+        color = "green"
+      )
+      
     })
   
     
     observeEvent(input$date_type1,{
       
       output$sign_up_bar <- renderPlotly({
-            overviewplot_1("sign_up_datetime","Number of Sign-ups",input$date_type1,
+            overviewplot_1(data_mod.df,"sign_up_datetime","Number of Sign-ups",input$date_type1,
                            input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
 
           })
@@ -609,26 +753,46 @@ server <- function(input, output) {
     observeEvent(input$date_type2,{
       
       output$contact_bar <- renderPlotly({
-        overviewplot_1("initial_contact_date","Number of Contacts",input$date_type2,
+        overviewplot_1(data_mod.df,"initial_contact_date","Number of Contacts",input$date_type2,
                        input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
         
       })
     })
     
     
-    observeEvent(input$date_type3,{
+    change_app_output <- reactive({
+      list(input$date_type3,input$date_type3_1)
+    })
+    
+    
+    observeEvent(change_app_output(),{
+      
+      
+      #filters for people who had a call and have a visit scheduled 
+      if(input$date_type3_1 == "Only sucessful calls"){
+
+        data_mod_sel.df <- data_mod.df %>%
+          filter(!is.na(appointment_call_date),
+                 !is.na(visit_schedule_date)) 
+
+
+      }else if(input$date_type3_1 == "All"){
+
+        data_mod_sel.df <- data_mod.df
+      }
       
       output$appointment_bar <- renderPlotly({
-        overviewplot_1("appointment_call_date","Number of Appointment calls",input$date_type3,
+        overviewplot_1(data_mod_sel.df,"appointment_call_date","Number of Appointment calls",input$date_type3,
                        input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
         
       })
+      
     })
     
     observeEvent(input$date_type4,{
       
       output$visit_bar <- renderPlotly({
-        overviewplot_1("visit_schedule_date","Number of scheduled visits",input$date_type4,
+        overviewplot_1(data_mod.df,"visit_schedule_date","Number of scheduled visits",input$date_type4,
                        input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
         
       })
@@ -638,7 +802,7 @@ server <- function(input, output) {
       
       
       output$visit_future_bar <- renderPlotly({
-        overviewplot_1("visit_schedule_date","Number of scheduled visits",input$date_type4_1,
+        overviewplot_1(data_mod.df,"visit_schedule_date","Number of scheduled visits",input$date_type4_1,
                        input$age_filter,c(current_day,data_mod.df$visit_schedule_date %>% max()),input$race_filter,input$gender_filter)
       })
     })
@@ -647,7 +811,7 @@ server <- function(input, output) {
       
       output$onboarded_bar <- renderPlotly({
         
-        overviewplot_1("first_visit_date","Number of onboarded participants",input$date_type5,
+        overviewplot_1(data_mod.df,"first_visit_date","Number of onboarded participants",input$date_type5,
                        input$age_filter, input$date_filter,input$race_filter,input$gender_filter)
         
       })
