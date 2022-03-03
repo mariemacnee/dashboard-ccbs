@@ -11,7 +11,7 @@ library(DT)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
-data <- read_csv("sample_data_dashboard.csv")
+data <- read_csv("sample_data_dashboard Kopie.csv")
 
 end_date <- as.Date("2022-12-31") ##set a time in the future to account for visits that are sheduled for the future 
 current_day <- Sys.time()
@@ -414,11 +414,11 @@ ui <- dashboardPage(
         style = "background-color:#2C3E50;",
         tabItem(tabName = "dashboard",
                 fluidRow(
-                    column(12, 
+                    column(12, offset=1,
                     valueBoxOutput("box_signup", width=2),
                     valueBoxOutput("box_contact", width=2),
                     valueBoxOutput("box_app_calls", width=2),
-                    valueBoxOutput("box_succ_app_calls", width=2),
+                    #valueBoxOutput("box_succ_app_calls", width=2),
                     valueBoxOutput("box_visit_scheduled", width=2),
                     valueBoxOutput("box_onboard", width = 2)
                     )
@@ -642,7 +642,7 @@ server <- function(input, output) {
     output$box_contact <- renderValueBox({
       
       value_input <- data_mod.df %>% 
-        filter(!is.na(initial_contact_date)) %>% 
+        filter(whether_initial_contact == 1) %>% 
         nrow(.)
       
       
@@ -662,7 +662,7 @@ server <- function(input, output) {
     output$box_app_calls <- renderValueBox({
       
       value_input <- data_mod.df %>% 
-                  filter(!is.na(appointment_call_date)) %>%
+                  filter(whether_appointment_call == 1) %>%
                   nrow(.)
       
       past_values <- trend_time(data_mod.df,current_day,"appointment_call_date")
@@ -678,32 +678,32 @@ server <- function(input, output) {
         )
     })
     
-    output$box_succ_app_calls <- renderValueBox({
-      
-      data_mod_sel.df <- data_mod.df %>%
-        filter(!is.na(appointment_call_date),
-               !is.na(visit_schedule_date)) 
-      
-      value_input <- data_mod_sel.df %>% 
-        nrow(.)
-      
-      past_values <- trend_time(data_mod_sel.df,current_day,"appointment_call_date")
-      
-      valueBox(
-        value_input, 
-        p(tags$p("Successful  calls", style = "font-size: 150%"),
-          p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-            paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-            paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
-        icon = icon("phone"),
-        color = "blue"
-      )
-    })
+    # output$box_succ_app_calls <- renderValueBox({
+    #   
+    #   data_mod_sel.df <- data_mod.df %>%
+    #     filter(!is.na(appointment_call_date),
+    #            !is.na(visit_schedule_date)) 
+    #   
+    #   value_input <- data_mod_sel.df %>% 
+    #     nrow(.)
+    #   
+    #   past_values <- trend_time(data_mod_sel.df,current_day,"appointment_call_date")
+    #   
+    #   valueBox(
+    #     value_input, 
+    #     p(tags$p("Successful  calls", style = "font-size: 150%"),
+    #       p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
+    #         paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
+    #         paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+    #     icon = icon("phone"),
+    #     color = "blue"
+    #   )
+    # })
     
     output$box_visit_scheduled <- renderValueBox({
 
       value_input <- data_mod.df %>% 
-        filter(!is.na(visit_schedule_date)) %>%
+        filter(whether_appointment_scheduled == 1) %>%
         nrow(.)
       
       
@@ -724,7 +724,7 @@ server <- function(input, output) {
       
       #not sure if this is the right way to get this number 
       value_input <- data_mod.df %>% 
-        filter(!is.na(first_visit_date)) %>%
+        filter(whether_first_visit == 1) %>%
         nrow(.)
       
       
