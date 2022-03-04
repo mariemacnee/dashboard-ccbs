@@ -14,7 +14,7 @@ library(DT)
 data <- read_csv("sample_data_dashboard Kopie.csv")
 
 end_date <- as.Date("2022-12-31") ##set a time in the future to account for visits that are sheduled for the future 
-current_day <- Sys.time()
+current_day <- Sys.time() 
 
 firstup <- function(x) {
   x <- tolower(x)
@@ -424,7 +424,7 @@ ui <- dashboardPage(
                     )
                 ),
                 fluidRow(
-                  box(title = p("Onboarded participants", actionButton("onboarded_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                  box(title = p("Enrolled participants", actionButton("onboarded_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
                       solidHeader = T,  status = "success", width=12,
                       tabsetPanel(
                         tabPanel("First visit",
@@ -732,7 +732,7 @@ server <- function(input, output) {
       
       valueBox(
         value_input, 
-        p(tags$p("Onboarded", style = "font-size: 150%"),
+        p(tags$p("Enrolled", style = "font-size: 150%"),
           p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
             paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
             paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
@@ -814,7 +814,7 @@ server <- function(input, output) {
       
       output$onboarded_bar <- renderPlotly({
         
-        overviewplot_1(data_mod.df,"first_visit_date","Number of onboarded participants",input$date_type5,
+        overviewplot_1(data_mod.df,"first_visit_date","Number of enrolled participants",input$date_type5,
                        input$age_filter, input$date_filter,input$race_filter,input$gender_filter)
         
       })
