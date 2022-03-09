@@ -5,10 +5,10 @@ library(odbc)
 ##################### load data from SQL server
 ###################################################################################
 
-con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d", 
+con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d",
                  database = "CCBS")
 query <- "
-select 
+select
   weekday_prefer_Saturday,
   whether_initial_contact,
   number_appointment_attempt,
@@ -30,7 +30,7 @@ select
   record_id,
   sign_up_datetime,
   study_id,
-  visit_schedule_date,
+  schedule_made_datetime,
   saturday_mri,
   whether_ms_relative,
   initial_contact_response3,
@@ -78,34 +78,40 @@ library(tidyverse)
 library(plotly)
 library(lubridate)
 library(DT)
+library(tippy)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
-# data <- read_csv("sample_data_dashboard Kopie.csv")
+#data <- read_csv("sample_data_dashboard.csv")
 
-end_date <- as.Date("2022-12-31") ##set a time in the future to account for visits that are sheduled for the future 
-current_day <- Sys.time() 
+end_date <- as.Date("2023-12-31") ##set a time in the future to account for visits that are sheduled for the future 
+current_day <- Sys.time() #as.Date("2022-03-03")
 
 firstup <- function(x) {
-  x <- tolower(x)
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
   x
 }
 
 #data modification 
 data_mod.df <- data %>% 
-  mutate(first_visit_date = ifelse(whether_first_visit == 1, as.character(visit_schedule_date), NA)) %>%   
+  mutate(first_visit_date = ifelse(whether_first_visit == 1, as.character(schedule_made_datetime), NA)) %>%   
   mutate(sign_up_datetime = gsub(" .*","",sign_up_datetime) %>% as.Date(),
          initial_contact_date = gsub(" .*","",initial_contact_date) %>% as.Date(),
          appointment_call_date = gsub(" .*","",appointment_call_date) %>% as.Date(),
-         visit_schedule_date = gsub(" .*","",visit_schedule_date) %>% as.Date(),
+         #schedule_made_datetime = gsub(" .*","",schedule_made_datetime) %>% as.Date(),
+         schedule_made_datetime = gsub(" .*","",schedule_made_datetime) %>% as.Date(),
          first_visit_date =  gsub(" .*","",first_visit_date) %>% as.Date()) %>% 
   mutate(race_combine = ifelse(is.na(race_combine),"Unknown/ not disclosed",race_combine),
          sex_combine = ifelse(is.na(sex_combine),"Unknown/ not disclosed",sex_combine)) %>% 
   mutate(ccf_patient = ifelse(ccf_patient == 1,"yes","no")) %>% 
-  mutate(pat_city = firstup(pat_city)) %>% 
-  mutate(pat_county = firstup(pat_county)) %>% 
-  mutate(employ_status_desc = firstup(employ_status_desc)) 
+  mutate(whether_ms_relative = case_when(is.na(whether_ms_relative) ~ "Not available",
+                                         whether_ms_relative == 1 ~ "yes",
+                                         whether_ms_relative == 0 ~ "no",
+                                         T ~"stop")) %>% 
+  mutate(pat_city = tolower(pat_city) %>% firstup(.)) %>% 
+  mutate(pat_county = tolower(pat_county) %>% firstup(.)) %>% 
+  mutate(employ_status_desc = tolower(employ_status_desc) %>% firstup(.),
+         whether_sign_up = 1) 
 
 # mutate(weekday_prefer_Saturday = sample(c(1,0),nrow(.),replace = T),
 #        weekday_prefer_Monday = sample(c(1,0),nrow(.),replace = T),
@@ -128,7 +134,7 @@ trend_time <- function(data_mod.df,current_day, var){
   }
   
   data_mod_sel.df <- data_mod.df %>% 
-    rename(var_sel = var)
+    rename(var_sel = var) 
   
   
   value_yesterday <- data_mod_sel.df %>% 
@@ -140,19 +146,19 @@ trend_time <- function(data_mod.df,current_day, var){
     nrow(.)
   
   value_7days <- data_mod_sel.df %>% 
-    filter(var_sel %in% seq(as.Date(current_day - days(7)),as.Date(current_day- days(1)), by="days")) %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(6)),as.Date(current_day- days(0)), by="days")) %>% 
     nrow(.)
   
   value_7days_b <- data_mod_sel.df %>% 
-    filter(var_sel %in% seq(as.Date(current_day - days(14)),as.Date(current_day- days(8)), by="days")) %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(13)),as.Date(current_day- days(7)), by="days")) %>% 
     nrow(.)
   
   value_month <- data_mod_sel.df %>% 
-    filter(var_sel %in% seq(as.Date(current_day - days(30)),as.Date(current_day- days(1)), by="days")) %>% 
+    filter(var_sel %in% seq(as.Date(current_day - days(29)),as.Date(current_day- days(0)), by="days")) %>% 
     nrow(.)
   
   value_month_b <- data_mod_sel.df %>% 
-    filter(var_sel %in% seq(as.Date(current_day - days(60)),as.Date(current_day- days(31)), by="days")) %>%
+    filter(var_sel %in% seq(as.Date(current_day - days(59)),as.Date(current_day- days(30)), by="days")) %>%
     nrow(.)
   
   yesterday_per <- percent_diff(value_yesterday,value_yesterday_b) %>% round(.,1) %>% ifelse(. >0,paste0("+",.),.)
@@ -287,7 +293,9 @@ demographics_pie <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(age_combine1 >= age_filter[1] & age_combine <= age_filter[2],
-           selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           #selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           selected_var_date == 1,
+           selected_var_demo != "Not available",
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) %>%
     group_by(selected_var_demo) %>% 
@@ -322,7 +330,8 @@ city_barplot <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,date
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(age_combine1 >= age_filter[1] & age_combine <= age_filter[2],
-           selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           #selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           selected_var_date == 1,
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) %>%
     count(selected_var_demo)
@@ -358,7 +367,8 @@ age_histogram <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,dat
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
-           selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           #selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+           selected_var_date == 1,
            race_combine1 %in% race_filter,
            sex_combine1 %in% gender_filter) 
   
@@ -378,14 +388,25 @@ age_histogram <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,dat
   
 }
 
-preferred_days <- function(){
+preferred_days <- function(age_filter,date_filter,race_filter,gender_filter){
   
-  pl_input.df <- data_mod.df %>% 
+  data_mod_filt.df <- data_mod.df %>% 
+    filter(sign_up_datetime >= as.Date("2022-02-03")) %>%
+    mutate(age_combine1 = age_combine,
+           race_combine1 = race_combine,
+           sex_combine1 = sex_combine) %>% 
+    filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
+           sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
+           race_combine1 %in% race_filter,
+           sex_combine1 %in% gender_filter) 
+    
+  
+  pl_input.df <- data_mod_filt.df %>% 
     select(weekday_prefer_Monday,weekday_prefer_Tuesday,weekday_prefer_Wednesday,weekday_prefer_Thursday,weekday_prefer_Friday,weekday_prefer_Saturday,weekday_prefer_Sunday) %>% 
     colSums() %>% 
     as_tibble() %>% 
     mutate(day = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")) %>% 
-    mutate(prop = value/nrow(data_mod.df)*100)
+    mutate(prop = value/nrow(data_mod_filt.df)*100)
   
   plot_ly(pl_input.df,
           type = "bar",
@@ -402,14 +423,25 @@ preferred_days <- function(){
   
 }
 
-preferred_time <- function(){
+preferred_time <- function(age_filter,date_filter,race_filter,gender_filter){
   
-  pl_input.df <- data_mod.df %>% 
+  data_mod_filt.df <- data_mod.df %>% 
+    filter(sign_up_datetime >= as.Date("2022-02-03")) %>%
+    mutate(age_combine1 = age_combine,
+           race_combine1 = race_combine,
+           sex_combine1 = sex_combine) %>% 
+    filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
+           sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
+           race_combine1 %in% race_filter,
+           sex_combine1 %in% gender_filter)
+  
+  pl_input.df <- data_mod_filt.df %>% 
+    filter(sign_up_datetime >= as.Date("2022-02-03")) %>% 
     select(daytime_prefer_morning,daytime_prefer_afternoon,daytime_prefer_evening) %>% 
     colSums() %>% 
     as_tibble() %>% 
     mutate(day = c("Morning","Afternoon","Evening")) %>% 
-    mutate(prop = value/nrow(data_mod.df)*100)
+    mutate(prop = value/nrow(data_mod_filt.df)*100)
   
   
   
@@ -438,11 +470,11 @@ ui <- dashboardPage(
       menuItem("About", tabName = "about", icon = icon("question"))
     ),
     br(),
-    dateRangeInput("date_filter", h5("Date range"),
-                   min= "2021-12-01",
-                   max= end_date,
-                   start= "2021-12-01",
-                   end= Sys.Date()),
+    # dateRangeInput("date_filter", h5("Date range"),
+    #                min= "2021-12-01",
+    #                max= end_date,
+    #                start= "2021-12-01",
+    #                end= Sys.Date()),
     checkboxGroupInput("gender_filter", 
                        h5("Gender"), 
                        choices = list("Male", 
@@ -494,10 +526,15 @@ ui <- dashboardPage(
               )
             ),
             fluidRow(
-              box(title = p("Enrolled participants", actionButton("onboarded_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+              box(title = p("Enrolled participants",
+                            tippy(icon("question-circle"),
+                                  tooltip = h6(paste0("Participant came in for their scheduled visit time and is now in CCBS study."),
+                                  align = "left"),
+                            animation = "scale", 
+                            theme = "light")),
                   solidHeader = T,  status = "success", width=12,
                   tabsetPanel(
-                    tabPanel("First visit",
+                    tabPanel("First visit completed",
                              br(),
                              column(width=6, 
                                     column(width=6,
@@ -526,10 +563,29 @@ ui <- dashboardPage(
                              column(width=3,
                                     plotlyOutput("bar_city5", height = 300)),
                              column(width=3,
-                                    plotlyOutput("bar_county5", height = 300)))
+                                    plotlyOutput("bar_county5", height = 300))),
+                    tabPanel("Future visits",
+                             br(),
+                             column(width=12, 
+                                    column(width=3,
+                                           buttonGroup( inputId = "date_type5_1",
+                                                        choices = c("Cumulative", "Per day", "Per week"), 
+                                                        selected = "Cumulative", multiple= F)
+                                    ),
+                                    column(width=12,
+                                           br(),
+                                           plotlyOutput("future_visits", height = 400)
+                                    ))),
                   )),
-              box(title= p("Sign up", actionButton("signup_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+              box(title= p("Sign up",
+                           tippy(icon("question-circle"),
+                                 tooltip = h6(paste0("Participant seeks interest in our study and signs up on website to receive more information."),
+                                              align = "left"),
+                                 animation = "scale", 
+                                 theme = "light")),
                   solidHeader = F, status = "primary",width=6,
+                  collapsible = T,
+                  collapsed = T,
                   tabsetPanel(
                     tabPanel("History",
                              br(),
@@ -549,8 +605,15 @@ ui <- dashboardPage(
                                     plotlyOutput("preferred_daytime", height = 387)
                              ))
                   )),
-              box(title = p("Contact", actionButton("contact_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+              box(title = p("Contact",
+                            tippy(icon("question-circle"),
+                                  tooltip = h6(paste0("Research Coordinators first phone call with potential participant."),
+                                               align = "left"),
+                                  animation = "scale", 
+                                  theme = "light")),
                   solidHeader = F,  status = "primary",width=6,
+                  collapsible = T,
+                  collapsed = T,
                   tabsetPanel(
                     tabPanel("History",
                              br(),
@@ -583,56 +646,80 @@ ui <- dashboardPage(
                                     DT::dataTableOutput("ms_relative_table"))
                     )
                   )),
-              box(title = p("Appointment calls", actionButton("appointment_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
-                  solidHeader = F,  status = "primary",width=6,
-                  tabsetPanel(
-                    tabPanel("Appointment call",
-                             br(),
-                             column(width=6,
-                                    buttonGroup( inputId = "date_type3",
-                                                 choices = c("Cumulative", "Per day", "Per week"), 
-                                                 selected = "Cumulative", multiple= F)
-                             ),
-                             column(width=6,
-                                    buttonGroup( inputId = "date_type3_1",
-                                                 choices = c("All","Only sucessful calls"), 
-                                                 selected = "All", multiple= F)
-                             ),
-                             column(width=12,
-                                    plotlyOutput("appointment_bar", height = 300)
-                             ))
-                  )),
-              box(title = p("Scheduled visits",actionButton("scheduled_help", "", icon = icon("question"), class = "btn-xs", title = "Help")),
-                  solidHeader = F,  status = "primary",width=6,
-                  tabsetPanel(
-                    tabPanel("Visits",
-                             br(),
-                             column(width=6,
-                                    buttonGroup( inputId = "date_type4",
-                                                 choices = c("Cumulative", "Per day", "Per week"), 
-                                                 selected = "Cumulative", multiple= F)
-                             ),
-                             column(width=12,
-                                    plotlyOutput("visit_bar", height = 300)
-                             )),
-                    tabPanel("Scheduled visits",
-                             br(),
-                             column(width=6,
-                                    buttonGroup( inputId = "date_type4_1",
-                                                 choices = c("Cumulative", "Per day", "Per week"), 
-                                                 selected = "Cumulative", multiple= F)
-                             ),
-                             column(width=12,
-                                    plotlyOutput("visit_future_bar", height = 300)
-                             ))
-                  )),
-              box(title = "Demographics of different steps", solidHeader = T,  status = "primary", width=12,
+              fluidRow(
+                column(12,
+                box(title = p("Appointment calls",
+                              tippy(icon("question-circle"),
+                                    tooltip = h6(paste0("Return phone call to answer questions and schedule first visit to come in."),
+                                                 align = "left"),
+                                    animation = "scale", 
+                                    theme = "light")),
+                    solidHeader = F,  status = "primary",width=6,
+                    collapsible = T,
+                    collapsed = T,
+                    tabsetPanel(
+                      tabPanel("History",
+                               br(),
+                               column(width=6,
+                                      buttonGroup( inputId = "date_type3",
+                                                   choices = c("Cumulative", "Per day", "Per week"), 
+                                                   selected = "Cumulative", multiple= F)
+                               ),
+                               column(width=6,
+                                      buttonGroup( inputId = "date_type3_1",
+                                                   choices = c("All","Only sucessful calls"), 
+                                                   selected = "All", multiple= F)
+                               ),
+                               column(width=12,
+                                      plotlyOutput("appointment_bar", height = 300)
+                               ))
+                    )),
+                box(title = p("Scheduled visits",
+                              tippy(icon("question-circle"),
+                                    tooltip = h6(paste0("Participants are scheduled appointments with RCs"),
+                                                 align = "left"),
+                                    animation = "scale", 
+                                    theme = "light")),
+                    solidHeader = F,  status = "primary",width=6,
+                    collapsible = T,
+                    collapsed = T,
+                    tabsetPanel(
+                      tabPanel("History",
+                               br(),
+                               column(width=6,
+                                      buttonGroup( inputId = "date_type4",
+                                                   choices = c("Cumulative", "Per day", "Per week"), 
+                                                   selected = "Cumulative", multiple= F)
+                               ),
+                               column(width=12,
+                                      plotlyOutput("visit_bar", height = 300)
+                               )),
+                      # tabPanel("Scheduled visits",
+                      #          br(),
+                      #          column(width=6,
+                      #                 buttonGroup( inputId = "date_type4_1",
+                      #                              choices = c("Cumulative", "Per day", "Per week"), 
+                      #                              selected = "Cumulative", multiple= F)
+                      #          ),
+                      #          column(width=12,
+                      #                 plotlyOutput("visit_future_bar", height = 300)
+                      #          ))
+                  )))),
+              box(title = "Demographics of enrollment steps", solidHeader = T,  status = "primary", width=12,
+                  collapsible = T,
+                  collapsed = T,
                   column(width=12,
                          br(),
                          box(width=3,
-                             title= p("Sign up", actionButton("signup_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                             title= p("Sign up",
+                                      tippy(icon("question-circle"),
+                                            tooltip = h6(paste0("Participant seeks interest in our study and signs up on website to receive more information."),
+                                                         align = "left"),
+                                            animation = "scale", 
+                                            theme = "light")),
                              solidHeader = T,  
                              status = "primary",
+                             br(),
                              br(),
                              plotlyOutput("pie_race1", height = 250),
                              plotlyOutput("pie_gender1", height = 250),
@@ -643,12 +730,17 @@ ui <- dashboardPage(
                              plotlyOutput("age_histo1", height = 200)
                          ),
                          box(width=3,
-                             title = div(p("Contacted", actionButton("contact_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
-                                         buttonGroup(inputId = "date_type6",
-                                                     choices = c("All", "Only eligable"), 
-                                                     selected = "All", multiple= F)), 
+                             title = p("Contacted",
+                                       tippy(icon("question-circle"),
+                                             tooltip = h6(paste0("Research Coordinators first phone call with potential participant."),
+                                                          align = "left"),
+                                             animation = "scale", 
+                                             theme = "light")),
                              solidHeader = T,  
                              status = "primary",
+                             buttonGroup(inputId = "date_type6",
+                                         choices = c("All", "Only eligable"), 
+                                         selected = "All", multiple= F), 
                              br(),
                              plotlyOutput("pie_race2", height = 250),
                              plotlyOutput("pie_gender2", height = 250),
@@ -659,9 +751,15 @@ ui <- dashboardPage(
                              plotlyOutput("age_histo2", height = 200)
                          ),
                          box(width=3, 
-                             title=  p("Appointment call",actionButton("appointment_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                             title=  p("Appointment call",
+                                       tippy(icon("question-circle"),
+                                             tooltip = h6(paste0("Return phone call to answer questions and schedule first visit to come in."),
+                                                          align = "left"),
+                                             animation = "scale", 
+                                             theme = "light")),
                              solidHeader = T,  
                              status = "primary",
+                             br(),
                              br(),
                              plotlyOutput("pie_race3", height = 250),
                              plotlyOutput("pie_gender3", height = 250),
@@ -672,9 +770,15 @@ ui <- dashboardPage(
                              plotlyOutput("age_histo3", height = 200)
                          ),
                          box(width=3,
-                             title= p("Scheduled visit",actionButton("scheduled_help2", "", icon = icon("question"), class = "btn-xs", title = "Help")),
+                             title= p("Scheduled visit",
+                                      tippy(icon("question-circle"),
+                                            tooltip = h6(paste0("Participants are scheduled appointments with RCs."),
+                                                         align = "left"),
+                                            animation = "scale", 
+                                            theme = "light")),
                              solidHeader = T,
                              status = "primary",
+                             br(),
                              br(),
                              plotlyOutput("pie_race4", height = 250),
                              plotlyOutput("pie_gender4", height = 250),
@@ -691,6 +795,11 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+  
+  #date_dummy currently replcaed by a dummy 
+  date_dummy <- c(as.Date("2021-12-01"),current_day)
+  
+  
   
   output$box_signup <- renderValueBox({
     
@@ -752,7 +861,7 @@ server <- function(input, output) {
   #   
   #   data_mod_sel.df <- data_mod.df %>%
   #     filter(!is.na(appointment_call_date),
-  #            !is.na(visit_schedule_date)) 
+  #            !is.na(schedule_made_datetime)) 
   #   
   #   value_input <- data_mod_sel.df %>% 
   #     nrow(.)
@@ -777,7 +886,7 @@ server <- function(input, output) {
       nrow(.)
     
     
-    past_values <- trend_time(data_mod.df,current_day,"visit_schedule_date")
+    past_values <- trend_time(data_mod.df,current_day,"schedule_made_datetime")
     
     valueBox(
       value_input, 
@@ -798,7 +907,7 @@ server <- function(input, output) {
       nrow(.)
     
     
-    past_values <- trend_time(data_mod.df,current_day,"first_visit_date")
+    past_values <- trend_time(data_mod.df,current_day,"schedule_made_datetime")
     
     valueBox(
       value_input, 
@@ -817,7 +926,7 @@ server <- function(input, output) {
     
     output$sign_up_bar <- renderPlotly({
       overviewplot_1(data_mod.df,"sign_up_datetime","Number of Sign-ups",input$date_type1,
-                     input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+                     input$age_filter,date_dummy,input$race_filter,input$gender_filter)
       
     })
   })
@@ -827,7 +936,7 @@ server <- function(input, output) {
     
     output$contact_bar <- renderPlotly({
       overviewplot_1(data_mod.df,"initial_contact_date","Number of Contacts",input$date_type2,
-                     input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+                     input$age_filter,date_dummy,input$race_filter,input$gender_filter)
       
     })
   })
@@ -846,7 +955,7 @@ server <- function(input, output) {
       
       data_mod_sel.df <- data_mod.df %>%
         filter(!is.na(appointment_call_date),
-               !is.na(visit_schedule_date)) 
+               !is.na(schedule_made_datetime)) 
       
       
     }else if(input$date_type3_1 == "All"){
@@ -856,7 +965,7 @@ server <- function(input, output) {
     
     output$appointment_bar <- renderPlotly({
       overviewplot_1(data_mod_sel.df,"appointment_call_date","Number of Appointment calls",input$date_type3,
-                     input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+                     input$age_filter,date_dummy,input$race_filter,input$gender_filter)
       
     })
     
@@ -865,8 +974,8 @@ server <- function(input, output) {
   observeEvent(input$date_type4,{
     
     output$visit_bar <- renderPlotly({
-      overviewplot_1(data_mod.df,"visit_schedule_date","Number of scheduled visits",input$date_type4,
-                     input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      overviewplot_1(data_mod.df,"schedule_made_datetime","Number of scheduled visits",input$date_type4,
+                     input$age_filter,date_dummy,input$race_filter,input$gender_filter)
       
     })
   })
@@ -875,8 +984,8 @@ server <- function(input, output) {
     
     
     output$visit_future_bar <- renderPlotly({
-      overviewplot_1(data_mod.df,"visit_schedule_date","Number of scheduled visits",input$date_type4_1,
-                     input$age_filter,c(current_day,data_mod.df$visit_schedule_date %>% max()),input$race_filter,input$gender_filter)
+      overviewplot_1(data_mod.df,"schedule_made_datetime","Number of scheduled visits",input$date_type4_1,
+                     input$age_filter,c(current_day,data_mod.df$schedule_made_datetime %>% max()),input$race_filter,input$gender_filter)
     })
   })
   
@@ -884,8 +993,18 @@ server <- function(input, output) {
     
     output$onboarded_bar <- renderPlotly({
       
-      overviewplot_1(data_mod.df,"first_visit_date","Number of enrolled participants",input$date_type5,
-                     input$age_filter, input$date_filter,input$race_filter,input$gender_filter)
+      overviewplot_1(data_mod.df,"visit_schedule_date","Number of enrolled participants",input$date_type5,
+                     input$age_filter, date_dummy,input$race_filter,input$gender_filter)
+      
+    })
+  })
+    
+  observeEvent(input$date_type5_1,{
+    
+    output$future_visits <- renderPlotly({
+      
+      overviewplot_1(data_mod.df,"visit_schedule_date","Number of enrolled participants",input$date_type5_1,
+                     input$age_filter, c(current_day,as.Date(data_mod.df$visit_schedule_date %>% max(na.rm = T))),input$race_filter,input$gender_filter)
       
     })
   })
@@ -894,44 +1013,46 @@ server <- function(input, output) {
   #SIGN UP#
   #demographics sign up date
   output$pie_race1 <- renderPlotly({
-    demographics_pie(data_mod.df,"race_combine","sign_up_datetime","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    #demographics_pie(data_mod.df,"race_combine","sign_up_datetime","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"race_combine","whether_sign_up","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_gender1 <- renderPlotly({
-    demographics_pie(data_mod.df,"sex_combine","sign_up_datetime","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    #demographics_pie(data_mod.df,"sex_combine","sign_up_datetime","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"sex_combine","whether_sign_up","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_employee1 <- renderPlotly({
-    demographics_pie(data_mod.df,"employ_status_desc","sign_up_datetime","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"employ_status_desc","whether_sign_up","Employee status",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_ccfpatient1 <- renderPlotly({
-    demographics_pie(data_mod.df,"ccf_patient","sign_up_datetime","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"ccf_patient","whether_sign_up","CCF patient",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_city1 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_city","sign_up_datetime","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_city","whether_sign_up","Top 20 Cities",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_county1 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_county","sign_up_datetime","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_county","whether_sign_up","Top 20 Counties",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$age_histo1 <- renderPlotly({
-    age_histogram(data_mod.df,"age_combine","sign_up_datetime","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    age_histogram(data_mod.df,"age_combine","whether_sign_up","Age distribution",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   ##preferred days 
   output$preferred_days <- renderPlotly({
     
-    preferred_days()
+    preferred_days(input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     
   })
   #daytime
   
   output$preferred_daytime <- renderPlotly({
     
-    preferred_days()
+    preferred_time(input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     
   })
   
@@ -951,46 +1072,49 @@ server <- function(input, output) {
     }
     
     output$pie_race2 <- renderPlotly({
-      demographics_pie(data_mod_sel.df,"race_combine","initial_contact_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      #demographics_pie(data_mod_sel.df,"race_combine","initial_contact_date","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod_sel.df,"race_combine","whether_initial_contact","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$pie_gender2 <- renderPlotly({
-      demographics_pie(data_mod_sel.df,"sex_combine","initial_contact_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod_sel.df,"sex_combine","whether_initial_contact","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$pie_employee2 <- renderPlotly({
-      demographics_pie(data_mod_sel.df,"employ_status_desc","initial_contact_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod_sel.df,"employ_status_desc","whether_initial_contact","Employee status",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$pie_ccfpatient2 <- renderPlotly({
-      demographics_pie(data_mod_sel.df,"ccf_patient","initial_contact_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod_sel.df,"ccf_patient","whether_initial_contact","CCF patient",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$bar_city2 <- renderPlotly({
-      city_barplot(data_mod_sel.df,"pat_city","initial_contact_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod_sel.df,"pat_city","whether_initial_contact","Top 20 Cities",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$bar_county2 <- renderPlotly({
-      city_barplot(data_mod_sel.df,"pat_county","initial_contact_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      city_barplot(data_mod_sel.df,"pat_county","whether_initial_contact","Top 20 Counties",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$age_histo2 <- renderPlotly({
-      age_histogram(data_mod_sel.df,"age_combine","initial_contact_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      age_histogram(data_mod_sel.df,"age_combine","whether_initial_contact","Age distribution",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     #call atempts 
     output$pie_call_attempts <- renderPlotly({
-      demographics_pie(data_mod.df,"number_initial_contact_attempt","appointment_call_date","Call attempts",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"number_initial_contact_attempt","whether_initial_contact","Call attempts",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    # output$pie_call_attempts <- renderPlotly({
+    #   demographics_pie(data_mod.df,"number_initial_contact_attempt","appointment_call_date","Call attempts",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     #eligible
     output$pie_whether_eligible <- renderPlotly({
-      demographics_pie(data_mod.df,"whether_eligible","appointment_call_date","Whether eligible",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"whether_eligible","whether_initial_contact","Whether eligible",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     #ms relative
     output$pie_whether_ms_relative <- renderPlotly({
-      demographics_pie(data_mod.df,"whether_ms_relative","appointment_call_date","Whether MS relative",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"whether_ms_relative","whether_initial_contact","Whether MS relative",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
     output$ms_relative_table <- DT::renderDataTable({
@@ -999,12 +1123,12 @@ server <- function(input, output) {
         mutate(age_combine1 = age_combine,
                race_combine1 = race_combine,
                sex_combine1 = sex_combine) %>%  
-        filter(initial_contact_date >= input$date_filter[1] & initial_contact_date <= input$date_filter[2],
+        filter(initial_contact_date >= date_dummy[1] & initial_contact_date <= date_dummy[2],
                age_combine1 >= input$age_filter[1] & age_combine <= input$age_filter[2],
                race_combine1 %in% input$race_filter,
                sex_combine1 %in% input$gender_filter,
-               whether_ms_relative == 1) %>%  
-        select(record_id,sex_combine,age_combine,step,study_id, visit_schedule_date)
+               whether_ms_relative == "yes") %>%  
+        select(record_id,sex_combine,age_combine,step,study_id, schedule_made_datetime)
       
       data_mod.df
       
@@ -1017,7 +1141,7 @@ server <- function(input, output) {
     
     #saturday mri
     output$pie_saturday_mri <- renderPlotly({
-      demographics_pie(data_mod.df,"saturday_mri","appointment_call_date","Whether saturday MRI", input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+      demographics_pie(data_mod.df,"saturday_mri","whether_initial_contact","Whether saturday MRI", input$age_filter,date_dummy,input$race_filter,input$gender_filter)
     })
     
   })
@@ -1025,182 +1149,105 @@ server <- function(input, output) {
   #APPOINTMENTS#
   ###demographics appointment###
   output$pie_race3 <- renderPlotly({
-    demographics_pie(data_mod.df,"race_combine","appointment_call_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"race_combine","whether_appointment_call","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    
+    # demographics_pie(data_mod.df,"race_combine","appointment_call_date","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_gender3 <- renderPlotly({
-    demographics_pie(data_mod.df,"sex_combine","appointment_call_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"sex_combine","whether_appointment_call","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_employee3 <- renderPlotly({
-    demographics_pie(data_mod.df,"employ_status_desc","appointment_call_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"employ_status_desc","whether_appointment_call","Employee status",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_ccfpatient3 <- renderPlotly({
-    demographics_pie(data_mod.df,"ccf_patient","appointment_call_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"ccf_patient","whether_appointment_call","CCF patient",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_city3 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_city","appointment_call_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_city","whether_appointment_call","Top 20 Cities",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_county3 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_county","appointment_call_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_county","whether_appointment_call","Top 20 Counties",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$age_histo3 <- renderPlotly({
-    age_histogram(data_mod.df,"age_combine","appointment_call_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    age_histogram(data_mod.df,"age_combine","whether_appointment_call","Age distribution",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   #SCHEDULED VISITS#
   ###demographics scheduled visits###
   output$pie_race4 <- renderPlotly({
-    demographics_pie(data_mod.df,"race_combine","visit_schedule_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    
+    demographics_pie(data_mod.df,"race_combine","whether_appointment_scheduled","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    
+    # demographics_pie(data_mod.df,"race_combine","schedule_made_datetime","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_gender4 <- renderPlotly({
-    demographics_pie(data_mod.df,"sex_combine","visit_schedule_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"sex_combine","whether_appointment_scheduled","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_employee4 <- renderPlotly({
-    demographics_pie(data_mod.df,"employ_status_desc","visit_schedule_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"employ_status_desc","whether_appointment_scheduled","Employee status",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_ccfpatient4 <- renderPlotly({
-    demographics_pie(data_mod.df,"ccf_patient","visit_schedule_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"ccf_patient","whether_appointment_scheduled","CCF patient",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_city4 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_city","visit_schedule_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_city","whether_appointment_scheduled","Top 20 Cities",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_county4 <- renderPlotly({
-    city_barplot(data_mod.df,"pat_county","visit_schedule_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_county","whether_appointment_scheduled","Top 20 Counties",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$age_histo4 <- renderPlotly({
-    age_histogram(data_mod.df,"age_combine","visit_schedule_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    age_histogram(data_mod.df,"age_combine","whether_appointment_scheduled","Age distribution",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   #ONBOARDED #
   ###demographics of onboarded participants###
   output$pie_race5 <- renderPlotly({
     
-    demographics_pie(data_mod.df,"race_combine","first_visit_date","Race",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    # demographics_pie(data_mod.df,"race_combine","first_visit_date","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
+    
+    demographics_pie(data_mod.df,"race_combine","whether_first_visit","Race",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_gender5 <- renderPlotly({
     
-    demographics_pie(data_mod.df,"sex_combine","first_visit_date","Sex",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"sex_combine","whether_first_visit","Sex",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_employee5 <- renderPlotly({
     
-    demographics_pie(data_mod.df,"employ_status_desc","first_visit_date","Employee status",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"employ_status_desc","whether_first_visit","Employee status",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$pie_ccfpatient5 <- renderPlotly({
     
-    demographics_pie(data_mod.df,"ccf_patient","first_visit_date","CCF patient",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    demographics_pie(data_mod.df,"ccf_patient","whether_first_visit","CCF patient",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_city5 <- renderPlotly({
     
-    city_barplot(data_mod.df,"pat_city","first_visit_date","Top 20 Cities",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_city","whether_first_visit","Top 20 Cities",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$bar_county5 <- renderPlotly({
     
-    city_barplot(data_mod.df,"pat_county","first_visit_date","Top 20 Counties",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
+    city_barplot(data_mod.df,"pat_county","whether_first_visit","Top 20 Counties",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
   output$age_histo5 <- renderPlotly({
     
-    age_histogram(data_mod.df,"age_combine","first_visit_date","Age distribution",input$age_filter,input$date_filter,input$race_filter,input$gender_filter)
-  })
-  
-  
-  #### HELP TEXT ####
-  
-  observeEvent(input$onboarded_help, {
-    showModal(modalDialog(
-      HTML(paste("Participant came in for their scheduled visit time and is now in CCBS study.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$signup_help, {
-    showModal(modalDialog(
-      HTML(paste("Participant seeks interest in our study and signs up on website to receive more information.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$contact_help, {
-    showModal(modalDialog(
-      HTML(paste("Research Coordinators first phone call with potential participant.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$appointment_help, {
-    showModal(modalDialog(
-      HTML(paste("Return phone call to answer questions and schedule first visit to come in.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$scheduled_help, {
-    showModal(modalDialog(
-      HTML(paste("Participants are scheduled appointments with RCs")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$signup_help2, {
-    showModal(modalDialog(
-      HTML(paste("Participant seeks interest in our study and signs up on website to receive more information.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$contact_help2, {
-    showModal(modalDialog(
-      HTML(paste("Research Coordinators first phone call with potential participant.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$appointment_help2, {
-    showModal(modalDialog(
-      HTML(paste("Return phone call to answer questions and schedule first visit to come in.")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
-  })
-  
-  observeEvent(input$scheduled_help2, {
-    showModal(modalDialog(
-      HTML(paste("Participants are scheduled appointments with RCs")),
-      footer = tagList(
-        modalButton("OK"),
-      )
-    ))
+    age_histogram(data_mod.df,"age_combine","whether_first_visit","Age distribution",input$age_filter,date_dummy,input$race_filter,input$gender_filter)
   })
   
 }
