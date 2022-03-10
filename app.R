@@ -5,60 +5,60 @@ library(odbc)
 ##################### load data from SQL server
 ###################################################################################
 
-con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d",
-                 database = "CCBS")
-query <- "
-select
-  weekday_prefer_Saturday,
-  whether_initial_contact,
-  number_appointment_attempt,
-  weekday_prefer_Friday,
-  weekday_prefer_Monday,
-  number_initial_contact_attempt,
-  weekday_prefer_Sunday,
-  weekday_prefer_Thursday,
-  weekday_prefer_Tuesday,
-  daytime_prefer_morning,
-  daytime_prefer_evening,
-  daytime_prefer_afternoon,
-  ccf_patient,
-  weekday_prefer_Wednesday,
-  whether_appointment_call,
-  whether_appointment_scheduled,
-  whether_eligible,
-  whether_first_visit,
-  record_id,
-  sign_up_datetime,
-  study_id,
-  schedule_made_datetime,
-  saturday_mri,
-  whether_ms_relative,
-  initial_contact_response3,
-  initial_contact_response,
-  initial_contact_date,
-  heard_about_study,
-  decline_reason,
-  appointment_call_response_3,
-  initial_contact_response2,
-  not_eligible_reason,
-  appointment_call_response_1,
-  appointment_call_date,
-  schedule_made_datetime,
-  age_combine,
-  appointment_call_response_2,
-  sex_combine,
-  ethnicity_combine,
-  step,
-  employ_status_desc,
-  occupation,
-  pat_city,
-  pat_county,
-  race_combine
-from  [CCBS].[QU].[RedCap_feature_data]
-"
-data <- dbGetQuery(con, query)
-
-dbDisconnect(con)
+# con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d",
+#                  database = "CCBS")
+# query <- "
+# select
+#   weekday_prefer_Saturday,
+#   whether_initial_contact,
+#   number_appointment_attempt,
+#   weekday_prefer_Friday,
+#   weekday_prefer_Monday,
+#   number_initial_contact_attempt,
+#   weekday_prefer_Sunday,
+#   weekday_prefer_Thursday,
+#   weekday_prefer_Tuesday,
+#   daytime_prefer_morning,
+#   daytime_prefer_evening,
+#   daytime_prefer_afternoon,
+#   ccf_patient,
+#   weekday_prefer_Wednesday,
+#   whether_appointment_call,
+#   whether_appointment_scheduled,
+#   whether_eligible,
+#   whether_first_visit,
+#   record_id,
+#   sign_up_datetime,
+#   study_id,
+#   schedule_made_datetime,
+#   saturday_mri,
+#   whether_ms_relative,
+#   initial_contact_response3,
+#   initial_contact_response,
+#   initial_contact_date,
+#   heard_about_study,
+#   decline_reason,
+#   appointment_call_response_3,
+#   initial_contact_response2,
+#   not_eligible_reason,
+#   appointment_call_response_1,
+#   appointment_call_date,
+#   schedule_made_datetime,
+#   age_combine,
+#   appointment_call_response_2,
+#   sex_combine,
+#   ethnicity_combine,
+#   step,
+#   employ_status_desc,
+#   occupation,
+#   pat_city,
+#   pat_county,
+#   race_combine
+# from  [CCBS].[QU].[RedCap_feature_data]
+# "
+# data <- dbGetQuery(con, query)
+# 
+# dbDisconnect(con)
 
 
 
@@ -82,10 +82,11 @@ library(tippy)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
-#data <- read_csv("sample_data_dashboard.csv")
+data <- read_csv("sample_data_dashboard.csv")
 
 end_date <- as.Date("2023-12-31") ##set a time in the future to account for visits that are sheduled for the future 
-current_day <- Sys.time() #as.Date("2022-03-03")
+current_day <- as.Date(Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]) 
+    #Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -811,7 +812,7 @@ server <- function(input, output) {
       p(tags$p("Sign up", style = "font-size: 150%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
           paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
       icon = icon("sign-in"),
       color = "aqua"
     )
@@ -832,7 +833,7 @@ server <- function(input, output) {
       p(tags$p("Contacted", style = "font-size: 150%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
           paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
       icon = icon("comment"),
       color = "light-blue"
     )
@@ -851,7 +852,7 @@ server <- function(input, output) {
       p(tags$p("Appointment calls", style = "font-size: 150%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
           paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
       icon = icon("phone"),
       color = "blue"
     )
@@ -893,7 +894,7 @@ server <- function(input, output) {
       p(tags$p("Scheduled visits", style = "font-size: 150%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
           paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
       icon = icon("calendar"),
       color = "navy"
     )
@@ -907,14 +908,14 @@ server <- function(input, output) {
       nrow(.)
     
     
-    past_values <- trend_time(data_mod.df,current_day,"schedule_made_datetime")
+    past_values <- trend_time(data_mod.df,current_day,"visit_schedule_date")
     
     valueBox(
       value_input, 
       p(tags$p("Enrolled", style = "font-size: 150%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
           paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last month: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
       icon = icon("users"),
       color = "green"
     )
