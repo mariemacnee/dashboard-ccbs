@@ -82,7 +82,7 @@ library(tippy)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
-data <- read_csv("sample_data_dashboard.csv")
+data <- read_csv("github/sample_data_dashboard.csv")
 
 end_date <- as.Date("2023-12-31") ##set a time in the future to account for visits that are sheduled for the future 
 current_day <- as.Date(Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]) 
@@ -109,7 +109,11 @@ data_mod.df <- data %>%
   mutate(whether_ms_relative = case_when(is.na(whether_ms_relative) ~ "Not available",
                                          whether_ms_relative == 1 ~ "yes",
                                          whether_ms_relative == 0 ~ "no",
-                                         T ~"stop")) %>% 
+                                         T ~"stop"),
+         whether_eligible_yn = ifelse(whether_eligible == 1 & !is.na(whether_eligible),"yes",
+                                      ifelse(whether_eligible == 0 & !is.na(whether_eligible),"no", NA)),
+         saturday_mri_yn = ifelse(saturday_mri == 1 & !is.na(saturday_mri),"yes",
+                                      ifelse(saturday_mri == 0 & !is.na(saturday_mri),"no", NA))) %>% 
   mutate(pat_city = tolower(pat_city) %>% firstup(.)) %>% 
   mutate(pat_county = tolower(pat_county) %>% firstup(.)) %>% 
   mutate(employ_status_desc = tolower(employ_status_desc) %>% firstup(.),
@@ -254,32 +258,64 @@ overviewplot_1 <- function(data_mod.df,var,xaxis,date_sel,age_filter,date_filter
       
     } 
     
-    py <- plot_ly(data = date_input.df,
-                  type = "bar",
+    if(date_sel == "Per week"){
+      
+      py <- plot_ly(data = date_input.df %>% 
+                      mutate(Dates = factor(Dates, levels = Dates)),
+                    type = "bar",
+                    x = ~Dates,
+                    y = ~count,
+                    name = "Number of individuals") %>%
+        rangeslider(thickness = 0.1 ) %>% 
+        add_trace(type = 'scatter', 
+                  mode = 'lines',
+                  line = list(color = "orange"),
                   x = ~Dates,
-                  y = ~count,
-                  name = "Number of individuals") %>%
-      rangeslider(thickness = 0.1 ) %>% 
-      add_trace(type = 'scatter', 
-                mode = 'lines',
-                line = list(color = "orange"),
-                x = ~Dates,
-                y = ~day7_avg,
-                name = "7 day average") %>% 
-      add_trace(type = 'scatter', 
-                mode = 'lines',
-                line = list(color = "yellow"),
-                x = ~Dates,
-                y = ~month_avg,
-                name = "30 day average") %>% 
-      layout(yaxis = list(title = xaxis),
-             xaxis = list(title = ""),
-             #legend = list(x = 0.1, y = 0.9),
-             legend = list(orientation = "h",  
-                           xanchor = "center",  
-                           x = 0.5))
+                  y = ~day7_avg,
+                  name = "7 day average") %>% 
+        add_trace(type = 'scatter', 
+                  mode = 'lines',
+                  line = list(color = "yellow"),
+                  x = ~Dates,
+                  y = ~month_avg,
+                  name = "30 day average") %>% 
+        layout(yaxis = list(title = xaxis),
+               xaxis = list(title = ""),
+               #legend = list(x = 0.1, y = 0.9),
+               legend = list(orientation = "h",  
+                             xanchor = "center",  
+                             x = 0.5))
+      
+    } else if (date_sel == "Per day"){
+      
+      py <- plot_ly(data = date_input.df,
+                    type = "bar",
+                    x = ~Dates,
+                    y = ~count,
+                    name = "Number of individuals") %>%
+        rangeslider(thickness = 0.1 ) %>% 
+        add_trace(type = 'scatter', 
+                  mode = 'lines',
+                  line = list(color = "orange"),
+                  x = ~Dates,
+                  y = ~day7_avg,
+                  name = "7 day average") %>% 
+        add_trace(type = 'scatter', 
+                  mode = 'lines',
+                  line = list(color = "yellow"),
+                  x = ~Dates,
+                  y = ~month_avg,
+                  name = "30 day average") %>% 
+        layout(yaxis = list(title = xaxis),
+               xaxis = list(title = ""),
+               #legend = list(x = 0.1, y = 0.9),
+               legend = list(orientation = "h",  
+                             xanchor = "center",  
+                             x = 0.5))
+    }
     
   }
+    
   
   return(py)
   
@@ -1124,7 +1160,7 @@ server <- function(input, output) {
     
     #eligible
     output$pie_whether_eligible <- renderPlotly({
-      demographics_pie(data_mod.df,"whether_eligible","whether_initial_contact","Whether eligible",age_dummy,date_dummy,race_dummy,gender_dummy)
+      demographics_pie(data_mod.df,"whether_eligible_yn","whether_initial_contact","Whether eligible",age_dummy,date_dummy,race_dummy,gender_dummy)
     })
     
     #ms relative
@@ -1157,7 +1193,7 @@ server <- function(input, output) {
     
     #saturday mri
     output$pie_saturday_mri <- renderPlotly({
-      demographics_pie(data_mod.df,"saturday_mri","whether_initial_contact","Whether saturday MRI", age_dummy,date_dummy,race_dummy,gender_dummy)
+      demographics_pie(data_mod.df,"saturday_mri_yn","whether_initial_contact","Whether saturday MRI", age_dummy,date_dummy,race_dummy,gender_dummy)
     })
     
   })
