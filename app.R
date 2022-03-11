@@ -5,67 +5,66 @@ library(odbc)
 ##################### load data from SQL server
 ###################################################################################
 
-# con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d",
-#                  database = "CCBS")
-# query <- "
-# select
-#   weekday_prefer_Saturday,
-#   whether_initial_contact,
-#   number_appointment_attempt,
-#   weekday_prefer_Friday,
-#   weekday_prefer_Monday,
-#   number_initial_contact_attempt,
-#   weekday_prefer_Sunday,
-#   weekday_prefer_Thursday,
-#   weekday_prefer_Tuesday,
-#   daytime_prefer_morning,
-#   daytime_prefer_evening,
-#   daytime_prefer_afternoon,
-#   ccf_patient,
-#   weekday_prefer_Wednesday,
-#   whether_appointment_call,
-#   whether_appointment_scheduled,
-#   whether_eligible,
-#   whether_first_visit,
-#   record_id,
-#   sign_up_datetime,
-#   study_id,
-#   schedule_made_datetime,
-#   saturday_mri,
-#   whether_ms_relative,
-#   initial_contact_response3,
-#   initial_contact_response,
-#   initial_contact_date,
-#   heard_about_study,
-#   decline_reason,
-#   appointment_call_response_3,
-#   initial_contact_response2,
-#   not_eligible_reason,
-#   appointment_call_response_1,
-#   appointment_call_date,
-#   schedule_made_datetime,
-#   age_combine,
-#   appointment_call_response_2,
-#   sex_combine,
-#   ethnicity_combine,
-#   step,
-#   employ_status_desc,
-#   occupation,
-#   pat_city,
-#   pat_county,
-#   race_combine
-# from  [CCBS].[QU].[RedCap_feature_data]
-# "
-# data <- dbGetQuery(con, query)
-# 
-# dbDisconnect(con)
+con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d", 
+                 database = "CCBS")
+query <- "
+select 
+  weekday_prefer_Saturday,
+  whether_initial_contact,
+  number_appointment_attempt,
+  weekday_prefer_Friday,
+  weekday_prefer_Monday,
+  number_initial_contact_attempt,
+  weekday_prefer_Sunday,
+  weekday_prefer_Thursday,
+  weekday_prefer_Tuesday,
+  daytime_prefer_morning,
+  daytime_prefer_evening,
+  daytime_prefer_afternoon,
+  ccf_patient,
+  weekday_prefer_Wednesday,
+  whether_appointment_call,
+  whether_appointment_scheduled,
+  whether_eligible,
+  whether_first_visit,
+  record_id,
+  sign_up_datetime,
+  study_id,
+  visit_schedule_date,
+  saturday_mri,
+  whether_ms_relative,
+  initial_contact_response3,
+  initial_contact_response,
+  initial_contact_date,
+  heard_about_study,
+  decline_reason,
+  appointment_call_response_3,
+  initial_contact_response2,
+  not_eligible_reason,
+  appointment_call_response_1,
+  appointment_call_date,
+  schedule_made_datetime,
+  age_combine,
+  appointment_call_response_2,
+  sex_combine,
+  ethnicity_combine,
+  step,
+  employ_status_desc,
+  occupation,
+  pat_city,
+  pat_county,
+  race_combine
+from  [CCBS].[QU].[RedCap_feature_data]
+"
+data <- dbGetQuery(con, query)
+
+dbDisconnect(con)
 
 
 
 ###################################################################################
 ##################### R shiny dashboard
 ###################################################################################
-
 
 
 
@@ -82,11 +81,11 @@ library(tippy)
 #devtools::install_github("gadenbuie/shinyThings")
 
 
-data <- read_csv("github/sample_data_dashboard.csv")
+#data <- read_csv("github/sample_data_dashboard.csv")
 
 end_date <- as.Date("2023-12-31") ##set a time in the future to account for visits that are sheduled for the future 
 current_day <- as.Date(Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]) 
-    #Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]
+#Sys.time() %>% str_split(.," ") %>% unlist() %>% .[1]
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -113,7 +112,7 @@ data_mod.df <- data %>%
          whether_eligible_yn = ifelse(whether_eligible == 1 & !is.na(whether_eligible),"yes",
                                       ifelse(whether_eligible == 0 & !is.na(whether_eligible),"no", NA)),
          saturday_mri_yn = ifelse(saturday_mri == 1 & !is.na(saturday_mri),"yes",
-                                      ifelse(saturday_mri == 0 & !is.na(saturday_mri),"no", NA))) %>% 
+                                  ifelse(saturday_mri == 0 & !is.na(saturday_mri),"no", NA))) %>% 
   mutate(pat_city = tolower(pat_city) %>% firstup(.)) %>% 
   mutate(pat_county = tolower(pat_county) %>% firstup(.)) %>% 
   mutate(employ_status_desc = tolower(employ_status_desc) %>% firstup(.),
@@ -315,7 +314,7 @@ overviewplot_1 <- function(data_mod.df,var,xaxis,date_sel,age_filter,date_filter
     }
     
   }
-    
+  
   
   return(py)
   
@@ -331,13 +330,13 @@ demographics_pie <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(#age_combine1 >= age_filter[1] & age_combine <= age_filter[2],
-           ##selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
-           selected_var_date == 1,
-           selected_var_demo != "Not available"
-           #,
-           #race_combine1 %in% race_filter,
-           #sex_combine1 %in% gender_filter
-           ) %>%
+      ##selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+      selected_var_date == 1,
+      selected_var_demo != "Not available"
+      #,
+      #race_combine1 %in% race_filter,
+      #sex_combine1 %in% gender_filter
+    ) %>%
     group_by(selected_var_demo) %>% 
     summarise(n = n()) %>% 
     ungroup() %>% 
@@ -370,12 +369,12 @@ city_barplot <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,date
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(#age_combine1 >= age_filter[1] & age_combine <= age_filter[2],
-           ##selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
-           selected_var_date == 1
-           #,
-           #race_combine1 %in% race_filter,
-           #sex_combine1 %in% gender_filter
-           ) %>%
+      ##selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+      selected_var_date == 1
+      #,
+      #race_combine1 %in% race_filter,
+      #sex_combine1 %in% gender_filter
+    ) %>%
     count(selected_var_demo)
   
   validate(need(nrow(bar_input.df) > 0, message = "No data after filtering."))
@@ -409,12 +408,12 @@ age_histogram <- function(data_mod.df,var_demo,var_date,title_sel,age_filter,dat
     rename(selected_var_date = var_date,
            selected_var_demo = var_demo) %>% 
     filter(#age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
-           #selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
-           selected_var_date == 1
-           #,
-           #race_combine1 %in% race_filter,
-           #sex_combine1 %in% gender_filter
-           ) 
+      #selected_var_date >= date_filter[1] & selected_var_date <= date_filter[2],
+      selected_var_date == 1
+      #,
+      #race_combine1 %in% race_filter,
+      #sex_combine1 %in% gender_filter
+    ) 
   
   validate(need(nrow(histo_input.df) > 0, message = "No data after filtering."))
   
@@ -436,23 +435,26 @@ preferred_days <- function(age_filter,date_filter,race_filter,gender_filter){
   
   data_mod_filt.df <- data_mod.df %>% 
     filter(sign_up_datetime >= as.Date("2022-02-03")) 
-    #%>%
-    # mutate(age_combine1 = age_combine,
-    #        race_combine1 = race_combine,
-    #        sex_combine1 = sex_combine) %>% 
-    # filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
-    #        sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
-    #        race_combine1 %in% race_filter,
-    #        sex_combine1 %in% gender_filter
-    #        ) 
-    
+  #%>%
+  # mutate(age_combine1 = age_combine,
+  #        race_combine1 = race_combine,
+  #        sex_combine1 = sex_combine) %>% 
+  # filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
+  #        sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
+  #        race_combine1 %in% race_filter,
+  #        sex_combine1 %in% gender_filter
+  #        ) 
+  
   
   pl_input.df <- data_mod_filt.df %>% 
     select(weekday_prefer_Monday,weekday_prefer_Tuesday,weekday_prefer_Wednesday,weekday_prefer_Thursday,weekday_prefer_Friday,weekday_prefer_Saturday,weekday_prefer_Sunday) %>% 
+    mutate_all(as.numeric) %>%
     colSums() %>% 
     as_tibble() %>% 
     mutate(day = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")) %>% 
     mutate(prop = value/nrow(data_mod_filt.df)*100)
+  pl_input.df$day = factor(pl_input.df$day, 
+                           levels = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))
   
   plot_ly(pl_input.df,
           type = "bar",
@@ -463,8 +465,9 @@ preferred_days <- function(age_filter,date_filter,race_filter,gender_filter){
     layout(title = paste0("Preferred days of the week to be contaced"),
            yaxis = list(title = "Proportion of participants (%)"),
            xaxis = list(title = "",
-                        tickangle = -45,
-                        categoryorder = "total descending"),
+                        tickangle = -45
+                        #,categoryorder = "total descending"
+                        ),
            margin = list(t = 70))
   
 }
@@ -473,23 +476,26 @@ preferred_time <- function(age_filter,date_filter,race_filter,gender_filter){
   
   data_mod_filt.df <- data_mod.df %>% 
     filter(sign_up_datetime >= as.Date("2022-02-03")) 
-    #%>%
-    # mutate(age_combine1 = age_combine,
-    #        race_combine1 = race_combine,
-    #        sex_combine1 = sex_combine) %>% 
-    # filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
-    #        sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
-    #        race_combine1 %in% race_filter,
-    #        sex_combine1 %in% gender_filter)
+  #%>%
+  # mutate(age_combine1 = age_combine,
+  #        race_combine1 = race_combine,
+  #        sex_combine1 = sex_combine) %>% 
+  # filter(age_combine1 >= age_filter[1] & age_combine1 <= age_filter[2],
+  #        sign_up_datetime >= date_filter[1] & sign_up_datetime <= date_filter[2],
+  #        race_combine1 %in% race_filter,
+  #        sex_combine1 %in% gender_filter)
   
   pl_input.df <- data_mod_filt.df %>% 
     filter(sign_up_datetime >= as.Date("2022-02-03")) %>% 
     select(daytime_prefer_morning,daytime_prefer_afternoon,daytime_prefer_evening) %>% 
+    mutate_all(as.numeric) %>%
     colSums() %>% 
     as_tibble() %>% 
     mutate(day = c("Morning","Afternoon","Evening")) %>% 
     mutate(prop = value/nrow(data_mod_filt.df)*100)
   
+  pl_input.df$day = factor(pl_input.df$day, 
+                           levels =c("Morning","Afternoon","Evening"))
   
   
   plot_ly(pl_input.df,
@@ -501,8 +507,9 @@ preferred_time <- function(age_filter,date_filter,race_filter,gender_filter){
     layout(title = paste0("Preferred day time to be contaced"),
            yaxis = list(title = "Proportion of participants (%)"),
            xaxis = list(title = "",
-                        tickangle = -45,
-                        categoryorder = "total descending"),
+                        tickangle = -45
+                        #,categoryorder = "total descending"
+                        ),
            margin = list(t = 70))
   
 }
@@ -577,9 +584,9 @@ ui <- dashboardPage(
               box(title = p("Enrolled participants",
                             tippy(icon("question-circle"),
                                   tooltip = h6(paste0("Participant came in for their scheduled visit time and is now in CCBS study."),
-                                  align = "left"),
-                            animation = "scale", 
-                            theme = "light")),
+                                               align = "left"),
+                                  animation = "scale", 
+                                  theme = "light")),
                   solidHeader = T,  status = "success", width=12,
                   tabsetPanel(
                     tabPanel("First visit completed",
@@ -696,63 +703,63 @@ ui <- dashboardPage(
                   )),
               fluidRow(
                 column(12,
-                box(title = p("Appointment calls",
-                              tippy(icon("question-circle"),
-                                    tooltip = h6(paste0("Return phone call to answer questions and schedule first visit to come in."),
-                                                 align = "left"),
-                                    animation = "scale", 
-                                    theme = "light")),
-                    solidHeader = F,  status = "primary",width=6,
-                    collapsible = T,
-                    collapsed = T,
-                    tabsetPanel(
-                      tabPanel("History",
-                               br(),
-                               column(width=6,
-                                      buttonGroup( inputId = "date_type3",
-                                                   choices = c("Cumulative", "Per day", "Per week"), 
-                                                   selected = "Cumulative", multiple= F)
-                               ),
-                               column(width=6,
-                                      buttonGroup( inputId = "date_type3_1",
-                                                   choices = c("All","Only sucessful calls"), 
-                                                   selected = "All", multiple= F)
-                               ),
-                               column(width=12,
-                                      plotlyOutput("appointment_bar", height = 300)
-                               ))
-                    )),
-                box(title = p("Scheduled visits",
-                              tippy(icon("question-circle"),
-                                    tooltip = h6(paste0("Participants are scheduled appointments with RCs"),
-                                                 align = "left"),
-                                    animation = "scale", 
-                                    theme = "light")),
-                    solidHeader = F,  status = "primary",width=6,
-                    collapsible = T,
-                    collapsed = T,
-                    tabsetPanel(
-                      tabPanel("History",
-                               br(),
-                               column(width=6,
-                                      buttonGroup( inputId = "date_type4",
-                                                   choices = c("Cumulative", "Per day", "Per week"), 
-                                                   selected = "Cumulative", multiple= F)
-                               ),
-                               column(width=12,
-                                      plotlyOutput("visit_bar", height = 300)
-                               )),
-                      # tabPanel("Scheduled visits",
-                      #          br(),
-                      #          column(width=6,
-                      #                 buttonGroup( inputId = "date_type4_1",
-                      #                              choices = c("Cumulative", "Per day", "Per week"), 
-                      #                              selected = "Cumulative", multiple= F)
-                      #          ),
-                      #          column(width=12,
-                      #                 plotlyOutput("visit_future_bar", height = 300)
-                      #          ))
-                  )))),
+                       box(title = p("Appointment calls",
+                                     tippy(icon("question-circle"),
+                                           tooltip = h6(paste0("Return phone call to answer questions and schedule first visit to come in."),
+                                                        align = "left"),
+                                           animation = "scale", 
+                                           theme = "light")),
+                           solidHeader = F,  status = "primary",width=6,
+                           collapsible = T,
+                           collapsed = T,
+                           tabsetPanel(
+                             tabPanel("History",
+                                      br(),
+                                      column(width=6,
+                                             buttonGroup( inputId = "date_type3",
+                                                          choices = c("Cumulative", "Per day", "Per week"), 
+                                                          selected = "Cumulative", multiple= F)
+                                      ),
+                                      column(width=6,
+                                             buttonGroup( inputId = "date_type3_1",
+                                                          choices = c("All","Only sucessful calls"), 
+                                                          selected = "All", multiple= F)
+                                      ),
+                                      column(width=12,
+                                             plotlyOutput("appointment_bar", height = 300)
+                                      ))
+                           )),
+                       box(title = p("Scheduled visits",
+                                     tippy(icon("question-circle"),
+                                           tooltip = h6(paste0("Participants are scheduled appointments with RCs"),
+                                                        align = "left"),
+                                           animation = "scale", 
+                                           theme = "light")),
+                           solidHeader = F,  status = "primary",width=6,
+                           collapsible = T,
+                           collapsed = T,
+                           tabsetPanel(
+                             tabPanel("History",
+                                      br(),
+                                      column(width=6,
+                                             buttonGroup( inputId = "date_type4",
+                                                          choices = c("Cumulative", "Per day", "Per week"), 
+                                                          selected = "Cumulative", multiple= F)
+                                      ),
+                                      column(width=12,
+                                             plotlyOutput("visit_bar", height = 300)
+                                      )),
+                             # tabPanel("Scheduled visits",
+                             #          br(),
+                             #          column(width=6,
+                             #                 buttonGroup( inputId = "date_type4_1",
+                             #                              choices = c("Cumulative", "Per day", "Per week"), 
+                             #                              selected = "Cumulative", multiple= F)
+                             #          ),
+                             #          column(width=12,
+                             #                 plotlyOutput("visit_future_bar", height = 300)
+                             #          ))
+                           )))),
               box(title = "Demographics of enrollment steps", solidHeader = T,  status = "primary", width=12,
                   collapsible = T,
                   collapsed = T,
@@ -849,7 +856,7 @@ server <- function(input, output) {
   age_dummy <- c()
   race_dummy <- c()
   gender_dummy <-c()
-    
+  
   
   
   output$box_signup <- renderValueBox({
@@ -1049,7 +1056,7 @@ server <- function(input, output) {
       
     })
   })
-    
+  
   observeEvent(input$date_type5_1,{
     
     output$future_visits <- renderPlotly({
@@ -1154,8 +1161,8 @@ server <- function(input, output) {
     #call atempts 
     output$pie_call_attempts <- renderPlotly({
       demographics_pie(data_mod.df,"number_initial_contact_attempt","whether_initial_contact","Call attempts",age_dummy,date_dummy,race_dummy,gender_dummy)
-    # output$pie_call_attempts <- renderPlotly({
-    #   demographics_pie(data_mod.df,"number_initial_contact_attempt","appointment_call_date","Call attempts",age_dummy,date_dummy,race_dummy,gender_dummy)
+      # output$pie_call_attempts <- renderPlotly({
+      #   demographics_pie(data_mod.df,"number_initial_contact_attempt","appointment_call_date","Call attempts",age_dummy,date_dummy,race_dummy,gender_dummy)
     })
     
     #eligible
@@ -1175,10 +1182,10 @@ server <- function(input, output) {
         #        race_combine1 = race_combine,
         #        sex_combine1 = sex_combine) %>%
         filter(#initial_contact_date >= date_dummy[1] & initial_contact_date <= date_dummy[2],
-               #age_combine1 >= age_dummy[1] & age_combine <= age_dummy[2],
-               #race_combine1 %in% race_dummy,
-               #sex_combine1 %in% gender_dummy,
-               whether_ms_relative == "yes") %>%  
+          #age_combine1 >= age_dummy[1] & age_combine <= age_dummy[2],
+          #race_combine1 %in% race_dummy,
+          #sex_combine1 %in% gender_dummy,
+          whether_ms_relative == "yes") %>%  
         select(record_id,sex_combine,age_combine, race_combine, step,study_id, sign_up_datetime, visit_schedule_date)%>%  
         setNames(c("Record ID", "Gender", "Age", "Race", "Enrollment step", "Study ID", "Sign up", "Scheduled first visit"))
       
@@ -1305,17 +1312,6 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
