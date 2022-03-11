@@ -630,7 +630,7 @@ ui <- dashboardPage(
                                     column(width=12,
                                            br(),
                                            plotlyOutput("future_visits", height = 400)
-                                    ))),
+                                    )))
                   )),
               box(title= p("Sign up",
                            tippy(icon("question-circle"),
@@ -748,7 +748,7 @@ ui <- dashboardPage(
                                       ),
                                       column(width=12,
                                              plotlyOutput("visit_bar", height = 300)
-                                      )),
+                                      ))
                              # tabPanel("Scheduled visits",
                              #          br(),
                              #          column(width=6,
