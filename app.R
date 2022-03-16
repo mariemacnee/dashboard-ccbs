@@ -5,10 +5,10 @@ library(odbc)
 ##################### load data from SQL server
 ###################################################################################
 
-con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d", 
+con <- dbConnect(odbc::odbc(), driver = "SQL Server", server = "lri-sqldb-d",
                  database = "CCBS")
 query <- "
-select 
+select
   weekday_prefer_Saturday,
   whether_initial_contact,
   number_appointment_attempt,
@@ -866,10 +866,12 @@ server <- function(input, output) {
     
     valueBox(
       nrow(data), 
-      p(tags$p("Sign up", style = "font-size: 150%"),
+      p(tags$p("Sign up", style = "font-size: 200%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%", ", per day: ",round(past_values[[3]]/7,2),")"),br(),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%", ", per day: ",round(past_values[[5]]/30,2),")"), 
+          style = "font-size: 120%")
+        ),
       icon = icon("sign-in"),
       color = "aqua"
     )
@@ -887,10 +889,12 @@ server <- function(input, output) {
     
     valueBox(
       value_input, 
-      p(tags$p("Contacted", style = "font-size: 150%"),
+      p(tags$p("Contacted", style = "font-size: 200%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%", ", per day: ",round(past_values[[3]]/7,2),")"),br(),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%", ", per day: ",round(past_values[[5]]/30,2),")"), 
+          style = "font-size: 120%")
+      ),
       icon = icon("comment"),
       color = "light-blue"
     )
@@ -906,10 +910,12 @@ server <- function(input, output) {
     
     valueBox(
       value_input, 
-      p(tags$p("Appointment calls", style = "font-size: 150%"),
+      p(tags$p("Appointment calls", style = "font-size: 200%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%", ", per day: ",round(past_values[[3]]/7,2),")"),br(),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%", ", per day: ",round(past_values[[5]]/30,2),")"), 
+          style = "font-size: 120%")
+      ),
       icon = icon("phone"),
       color = "blue"
     )
@@ -948,10 +954,12 @@ server <- function(input, output) {
     
     valueBox(
       value_input, 
-      p(tags$p("Scheduled visits", style = "font-size: 150%"),
+      p(tags$p("Scheduled visits", style = "font-size: 200%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%", ", per day: ",round(past_values[[3]]/7,2),")"),br(),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%", ", per day: ",round(past_values[[5]]/30,2),")"), 
+          style = "font-size: 120%")
+      ),
       icon = icon("calendar"),
       color = "navy"
     )
@@ -969,10 +977,12 @@ server <- function(input, output) {
     
     valueBox(
       value_input, 
-      p(tags$p("Enrolled", style = "font-size: 150%"),
+      p(tags$p("Enrolled", style = "font-size: 200%"),
         p(paste0("Yesterday: ", past_values[[1]]," (",past_values[[2]],"%)"),br(),
-          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%)"),br(),
-          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%)"))),
+          paste0("Last 7 days: ", past_values[[3]]," (",past_values[[4]],"%", ", per day: ",round(past_values[[3]]/7,2),")"),br(),
+          paste0("Last 30 days: ", past_values[[5]]," (",past_values[[6]],"%", ", per day: ",round(past_values[[5]]/30,2),")"), 
+          style = "font-size: 120%")
+      ),
       icon = icon("users"),
       color = "green"
     )
